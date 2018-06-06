@@ -226,13 +226,15 @@ transformer(){
                     -word_vec_size 256 \
                     -encoder_type transformer \
                     -decoder_type transformer \
-                    -train_steps 10000 \
+                    -train_steps 2000 \
+                    -valid_steps 1000 \
+                    -save_checkpoint_steps 500 \
                     -gpuid $GPUID \
                     -max_generator_batches 4 \
                     -dropout 0.1 \
                     -normalization tokens \
                     -max_grad_norm 0 \
-                    -optim sparseadam \
+                    -optim adam \
                     -decay_method noam \
                     -learning_rate 2 \
                     -position_encoding \
