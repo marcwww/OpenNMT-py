@@ -312,10 +312,10 @@ tests_nmtmodel.append([('rnn_type', 'SRU'), ('input_feed', 0)])
 for p in tests_nmtmodel:
     _add_test(p, 'nmtmodel_forward')
 
-#for p in tests_nmtmodel:
+# for p in tests_nmtmodel:
 #    _add_test(p, 'imagemodel_forward')
 
-#for p in tests_nmtmodel:
+# for p in tests_nmtmodel:
 #    p.append(('sample_rate', 5500))
 #    p.append(('window_size', 0.03))
 #    _add_test(p, 'audiomodel_forward')

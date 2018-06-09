@@ -9,4 +9,4 @@ import onmt.utils.optimizers
 
 __all__ = ["aeq", "use_gpu", "ReportMgr", "build_report_manager",
            "Statistics", "is_master", "multi_init",
-           "all_reduce_and_rescale_tensors", "onmt.utils.optimizers"]
+           "all_reduce_and_rescale_tensors", onmt.utils.optimizers]

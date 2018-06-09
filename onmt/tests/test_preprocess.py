@@ -128,7 +128,7 @@ for p in test_databuild:
     _add_test(p, 'dataset_build')
 
 # Test image preprocessing
-#for p in copy.deepcopy(test_databuild):
+# for p in copy.deepcopy(test_databuild):
 #    p.append(('data_type', 'img'))
 #    p.append(('src_dir', '/tmp/im2text/images'))
 #    p.append(('train_src', '/tmp/im2text/src-train-head.txt'))
@@ -138,7 +138,7 @@ for p in test_databuild:
 #    _add_test(p, 'dataset_build')
 
 # Test audio preprocessing
-#for p in copy.deepcopy(test_databuild):
+# for p in copy.deepcopy(test_databuild):
 #    p.append(('data_type', 'audio'))
 #    p.append(('src_dir', '/tmp/speech/an4_dataset'))
 #    p.append(('train_src', '/tmp/speech/src-train-head.txt'))
