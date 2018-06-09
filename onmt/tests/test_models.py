@@ -68,7 +68,7 @@ class TestModel(unittest.TestCase):
         '''
         word_dict = self.get_vocab()
         feature_dicts = []
-        emb = make_embeddings(opt, word_dict, feature_dicts)
+        emb = build_embeddings(opt, word_dict, feature_dicts)
         test_src, _, __ = self.get_batch(source_l=source_l,
                                          bsize=bsize)
         if opt.decoder_type == 'transformer':
@@ -93,8 +93,8 @@ class TestModel(unittest.TestCase):
         '''
         word_dict = self.get_vocab()
         feature_dicts = []
-        embeddings = make_embeddings(opt, word_dict, feature_dicts)
-        enc = make_encoder(opt, embeddings)
+        embeddings = build_embeddings(opt, word_dict, feature_dicts)
+        enc = build_encoder(opt, embeddings)
 
         test_src, test_tgt, test_length = self.get_batch(source_l=source_l,
                                                          bsize=bsize)
@@ -125,12 +125,12 @@ class TestModel(unittest.TestCase):
         word_dict = self.get_vocab()
         feature_dicts = []
 
-        embeddings = make_embeddings(opt, word_dict, feature_dicts)
-        enc = make_encoder(opt, embeddings)
+        embeddings = build_embeddings(opt, word_dict, feature_dicts)
+        enc = build_encoder(opt, embeddings)
 
-        embeddings = make_embeddings(opt, word_dict, feature_dicts,
-                                     for_encoder=False)
-        dec = make_decoder(opt, embeddings)
+        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+                                      for_encoder=False)
+        dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
 
@@ -165,9 +165,9 @@ class TestModel(unittest.TestCase):
                            opt.rnn_size,
                            opt.dropout)
 
-        embeddings = make_embeddings(opt, word_dict, feature_dicts,
-                                     for_encoder=False)
-        dec = make_decoder(opt, embeddings)
+        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+                                      for_encoder=False)
+        dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
 
@@ -206,9 +206,9 @@ class TestModel(unittest.TestCase):
                            opt.sample_rate,
                            opt.window_size)
 
-        embeddings = make_embeddings(opt, word_dict, feature_dicts,
-                                     for_encoder=False)
-        dec = make_decoder(opt, embeddings)
+        embeddings = build_embeddings(opt, word_dict, feature_dicts,
+                                      for_encoder=False)
+        dec = build_decoder(opt, embeddings)
 
         model = onmt.models.model.NMTModel(enc, dec)
 
