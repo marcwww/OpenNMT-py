@@ -4,13 +4,12 @@ import unittest
 import math
 
 import torch
-from torch.autograd import Variable
 
 import onmt
 import onmt.inputters
 import onmt.opts
-from onmt.model_constructor import make_embeddings, \
-    make_encoder, make_decoder
+from onmt.model_builder import build_embeddings, \
+    build_encoder, build_decoder
 from onmt.encoders.image_encoder import ImageEncoder
 from onmt.encoders.audio_encoder import AudioEncoder
 
@@ -37,15 +36,15 @@ class TestModel(unittest.TestCase):
 
     def get_batch(self, source_l=3, bsize=1):
         # len x batch x nfeat
-        test_src = Variable(torch.ones(source_l, bsize, 1)).long()
-        test_tgt = Variable(torch.ones(source_l, bsize, 1)).long()
+        test_src = torch.ones(source_l, bsize, 1).long()
+        test_tgt = torch.ones(source_l, bsize, 1).long()
         test_length = torch.ones(bsize).fill_(source_l).long()
         return test_src, test_tgt, test_length
 
     def get_batch_image(self, tgt_l=3, bsize=1, h=15, w=17):
         # batch x c x h x w
-        test_src = Variable(torch.ones(bsize, 3, h, w)).float()
-        test_tgt = Variable(torch.ones(tgt_l, bsize, 1)).long()
+        test_src = torch.ones(bsize, 3, h, w).float()
+        test_tgt = torch.ones(tgt_l, bsize, 1).long()
         test_length = None
         return test_src, test_tgt, test_length
 
@@ -53,8 +52,8 @@ class TestModel(unittest.TestCase):
                         window_size=0.03, t=37):
         # batch x 1 x nfft x t
         nfft = int(math.floor((sample_rate * window_size) / 2) + 1)
-        test_src = Variable(torch.ones(bsize, 1, nfft, t)).float()
-        test_tgt = Variable(torch.ones(tgt_l, bsize, 1)).long()
+        test_src = torch.ones(bsize, 1, nfft, t).float()
+        test_tgt = torch.ones(tgt_l, bsize, 1).long()
         test_length = None
         return test_src, test_tgt, test_length
 
@@ -111,8 +110,7 @@ class TestModel(unittest.TestCase):
                          hidden_t[0].size(),
                          hidden_t[1].size())
         self.assertEqual(test_out.size(), outputs.size())
-        self.assertEqual(type(outputs), torch.autograd.Variable)
-        self.assertEqual(type(outputs.data), torch.FloatTensor)
+        self.assertEqual(type(outputs), torch.Tensor)
 
     def nmtmodel_forward(self, opt, source_l=3, bsize=1):
         """
@@ -144,8 +142,7 @@ class TestModel(unittest.TestCase):
         outputsize = torch.zeros(source_l - 1, bsize, opt.rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.autograd.Variable)
-        self.assertEqual(type(outputs.data), torch.FloatTensor)
+        self.assertEqual(type(outputs), torch.Tensor)
 
     def imagemodel_forward(self, opt, tgt_l=2, bsize=1, h=15, w=17):
         """
@@ -184,8 +181,7 @@ class TestModel(unittest.TestCase):
         outputsize = torch.zeros(tgt_l - 1, bsize, opt.rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.autograd.Variable)
-        self.assertEqual(type(outputs.data), torch.FloatTensor)
+        self.assertEqual(type(outputs), torch.Tensor)
 
     def audiomodel_forward(self, opt, tgt_l=2, bsize=1, t=37):
         """
@@ -227,8 +223,7 @@ class TestModel(unittest.TestCase):
         outputsize = torch.zeros(tgt_l - 1, bsize, opt.rnn_size)
         # Make sure that output has the correct size and type
         self.assertEqual(outputs.size(), outputsize.size())
-        self.assertEqual(type(outputs), torch.autograd.Variable)
-        self.assertEqual(type(outputs.data), torch.FloatTensor)
+        self.assertEqual(type(outputs), torch.Tensor)
 
 
 def _add_test(param_setting, methodname):
