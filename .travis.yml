@@ -18,7 +18,6 @@ before_install:
   - source activate test-environment
   # use requirements.txt for dependencies
   - pip install -r requirements.txt
-  - pip install cupy pynvrtc
   # optional dependencies for im2text and speech2text
   - sudo apt-get install -y sox libsox-dev libsox-fmt-all
   - pip install -r requirements.opt.txt
@@ -28,7 +27,7 @@ install:
 
 # Please also add tests to `test/pull_request_chk.sh`.
 script:
-   - onmt/tests/test_models.sh all
+   - onmt/tests/test_models.sh lstm cnn transformer
   #- wget -O /tmp/im2text.tgz http://lstm.seas.harvard.edu/latex/im2text_small.tgz; tar zxf /tmp/im2text.tgz -C /tmp/; head /tmp/im2text/src-train.txt > /tmp/im2text/src-train-head.txt; head /tmp/im2text/tgt-train.txt > /tmp/im2text/tgt-train-head.txt; head /tmp/im2text/src-val.txt > /tmp/im2text/src-val-head.txt; head /tmp/im2text/tgt-val.txt > /tmp/im2text/tgt-val-head.txt
   #- wget -O /tmp/speech.tgz http://lstm.seas.harvard.edu/latex/speech.tgz; tar zxf /tmp/speech.tgz -C /tmp/; head /tmp/speech/src-train.txt > /tmp/speech/src-train-head.txt; head /tmp/speech/tgt-train.txt > /tmp/speech/tgt-train-head.txt; head /tmp/speech/src-val.txt > /tmp/speech/src-val-head.txt; head /tmp/speech/tgt-val.txt > /tmp/speech/tgt-val-head.txt
   #- wget -O /tmp/test_model_speech.pt http://lstm.seas.harvard.edu/latex/test_model_speech.pt
