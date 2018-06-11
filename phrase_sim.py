@@ -69,12 +69,17 @@ def save_checkpoint(model, epoch, name='atec'):
     LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
     torch.save(model.state_dict(), model_fname)
 
-def train(train_iter, val_iter, nepoches, model, optim, criterion):
+def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
             seq1, seq2, lbl = sample.seq1,\
                               sample.seq2,\
                               sample.lbl
+
+            seq1 = seq1.to(device)
+            seq2 = seq2.to(device)
+            lbl = lbl.to(device)
+
             # seq : (seq_len,bsz)
             # lbl : (bsz)
             decoder_outputs, _, _ = model(seq1,seq2)
@@ -129,5 +134,5 @@ if __name__ == '__main__':
     criterion = nn.BCELoss()
 
     train(train_iter,val_iter,1000,
-          model,optim,criterion)
+          model,optim,criterion,device)
 

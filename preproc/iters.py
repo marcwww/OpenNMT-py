@@ -10,6 +10,8 @@ BOS_WORD = '<s>'
 HOME=os.path.abspath('.')
 DATA=os.path.join(HOME,'data')
 
+jieba.load_userdict(os.path.join(DATA,'dict.txt'))
+
 def tokenizer(txt):
     return list(jieba.cut(txt))
 
