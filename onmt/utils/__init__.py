@@ -11,4 +11,4 @@ from onmt.utils.optimizers import build_optim, MultipleOptimizer, \
 __all__ = ["aeq", "use_gpu", "ReportMgr",
            "build_report_manager", "Statistics", "is_master",
            "multi_init", "all_reduce_and_rescale_tensors",
-           "build_optim", "MultipleOptimizer", "Optimizer"]
+           "build_optim", "MultipleOptimizer", "Optimizer","loss"]

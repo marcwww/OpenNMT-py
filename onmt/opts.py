@@ -27,7 +27,7 @@ def model_opts(parser):
                        help="""Share the word embeddings between encoder
                        and decoder. Need to use shared dictionary for this
                        option.""")
-    group.add_argument('-position_encoding', action='store_true',
+    group.add_argument('-position_encoding', action='store_true', default=True,
                        help="""Use a sin to mark relative words positions.
                        Necessary for non-RNN style models.
                        """)
@@ -232,6 +232,8 @@ def train_opts(parser):
                        help="""Save a checkpoint every X steps""")
     group.add_argument('-keep_checkpoint', type=int, default=-1,
                        help="""Keep X checkpoints (negative: keep all)""")
+
+    group.add_argument('-gpu',default=-1,type=int)
 
     # GPU
     group.add_argument('-gpuid', default=[], nargs='+', type=int,

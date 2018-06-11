@@ -340,6 +340,17 @@ class Translator(object):
 
             # Construct batch x beam_size nxt words.
             # Get all the pending current beam words and arrange for forward.
+            b_lst=[]
+            for b in beam:
+                cur_state = b.get_current_state()
+                b_lst.append(cur_state)
+            # b_lst_var : (bsz,beam_sz)
+            b_lst_var = var(torch.stack(b_lst))
+            # b_lst_var_t : (beam_sz, bsz)
+            b_lst_var_t = b_lst_var.t()
+            # b_lst_var_t_view : (1,beam_sz * bsz)
+            b_lst_var_t_view = b_lst_var_t.contiguous().view(1,-1)
+
             inp = var(torch.stack([b.get_current_state() for b in beam])
                       .t().contiguous().view(1, -1))
 
