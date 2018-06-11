@@ -13,9 +13,9 @@ def model_opts(parser):
 
     # Embedding Options
     group = parser.add_argument_group('Model-Embeddings')
-    group.add_argument('-src_word_vec_size', type=int, default=500,
+    group.add_argument('-src_word_vec_size', type=int, default=400,
                        help='Word embedding size for src.')
-    group.add_argument('-tgt_word_vec_size', type=int, default=500,
+    group.add_argument('-tgt_word_vec_size', type=int, default=400,
                        help='Word embedding size for tgt.')
     group.add_argument('-word_vec_size', type=int, default=-1,
                        help='Word embedding size for src and tgt.')
@@ -53,12 +53,12 @@ def model_opts(parser):
                        the system to incorporate non-text inputs.
                        Options are [text|img|audio].""")
 
-    group.add_argument('-encoder_type', type=str, default='rnn',
+    group.add_argument('-encoder_type', type=str, default='transformer',
                        choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
                        help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
                        [rnn|brnn|mean|transformer|cnn].""")
-    group.add_argument('-decoder_type', type=str, default='rnn',
+    group.add_argument('-decoder_type', type=str, default='transformer',
                        choices=['rnn', 'transformer', 'cnn'],
                        help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
@@ -70,7 +70,7 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-rnn_size', type=int, default=500,
+    group.add_argument('-rnn_size', type=int, default=400,
                        help='Size of rnn hidden states')
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
