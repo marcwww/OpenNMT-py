@@ -40,7 +40,8 @@ class PhraseSim(nn.Module):
         enc_state = \
             self.decoder.init_decoder_state(src, memory_bank, enc_final)
 
-        bsz = train_iter.batch_size
+        # notice the final batch of seq1(seq2) could be smaller
+        bsz = seq1.shape[1]
 
         tgt = torch.LongTensor([self.TGT.vocab.stoi[BOS_WORD]]).expand(1, bsz, 1)
         tgt = tgt.to(device)
