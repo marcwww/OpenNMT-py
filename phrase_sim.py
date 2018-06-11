@@ -53,11 +53,11 @@ class PhraseSim(nn.Module):
         return decoder_outputs, dec_state, attns
 
 
-def progress_bar(percent, last_loss):
+def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
-    print("\r[{}{}]: {:.4f} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), percent, last_loss), end='')
+    print("\r[{}{}]: {:.4f}/epoch {:d} (Loss: {:.4f})".format(
+        "=" * fill, " " * (40 - fill), percent, epoch, last_loss), end='')
 
 def progress_clean():
     """Clean the progress bar."""
@@ -96,7 +96,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
 
             loss_val = loss.data.item()
             percent = i/len(train_iter)
-            progress_bar(percent,loss_val)
+            progress_bar(percent,loss_val,epoch)
 
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch)
