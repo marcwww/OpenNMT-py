@@ -32,7 +32,7 @@ class PhraseSim(nn.Module):
         self.TGT = TGT
 
 
-    def forward(self, seq1, seq2):
+    def forward(self, seq1, seq2, device):
         seq1 = seq1.unsqueeze(2)
         seq2 = seq2.unsqueeze(2)
 
@@ -43,6 +43,7 @@ class PhraseSim(nn.Module):
         bsz = train_iter.batch_size
 
         tgt = torch.LongTensor([self.TGT.vocab.stoi[BOS_WORD]]).expand(1, bsz, 1)
+        tgt = tgt.to(device)
 
         decoder_outputs, dec_state, attns = \
             self.decoder(tgt, memory_bank,
@@ -82,7 +83,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
-            decoder_outputs, _, _ = model(seq1,seq2)
+            decoder_outputs, _, _ = model(seq1,seq2,device)
             # decoder_outputs : (1,bsz,hdim)
             decoder_output = decoder_outputs.squeeze(0)
             # probs : (bsz)
