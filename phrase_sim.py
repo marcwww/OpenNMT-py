@@ -130,7 +130,7 @@ if __name__ == '__main__':
     device = torch.device(opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu')
 
     model = PhraseSim(encoder,decoder,TGT).to(device)
-    model.generator = generator
+    model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss()
 
