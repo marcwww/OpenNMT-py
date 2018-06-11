@@ -79,7 +79,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
 
             seq1 = seq1.to(device)
             seq2 = seq2.to(device)
-            lbl = lbl.to(device)
+            lbl = lbl.type(torch.FloatTensor).to(device)
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
@@ -88,7 +88,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             decoder_output = decoder_outputs.squeeze(0)
             # probs : (bsz)
             probs = model.generator(decoder_output).squeeze(1)
-            loss = criterion(probs,lbl.type(torch.FloatTensor))
+            loss = criterion(probs,lbl)
             loss.backward()
             clip_grads(model)
             optim.step()
