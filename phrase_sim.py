@@ -73,7 +73,7 @@ def save_checkpoint(model, epoch, name='atec'):
 def param_val(model):
     res = 0
     for param in model.parameters():
-        res += np.sum(param.data.numpy())
+        res += np.sum(param.data.cpu().numpy())
     return res
 
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
