@@ -159,6 +159,7 @@ class TransformerDecoder(nn.Module):
         self.bos_emb = nn.Parameter(torch.randn(1,embedding_dim))
         self.embeddding_dim = embedding_dim
         self.padding_idx = padding_idx
+        self.tgt = torch.LongTensor([BOS])
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
@@ -192,8 +193,7 @@ class TransformerDecoder(nn.Module):
         # CHECKS
         bsz = memory_bank.shape[1]
 
-        tgt = torch.LongTensor([BOS]).\
-            expand(1, bsz, 1)
+        tgt = self.tgt.expand(1, bsz, 1)
 
         assert isinstance(state, TransformerDecoderState)
         tgt_len, tgt_batch, _ = tgt.size()
