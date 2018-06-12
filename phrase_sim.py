@@ -150,7 +150,7 @@ if __name__ == '__main__':
     optim = optim.RMSprop(model.parameters(),
                   momentum=0.9,
                   alpha=0.95,
-                  lr=0.01)
+                  lr=0.001)
 
     train(train_iter,val_iter,1000,
           model,optim,criterion,device)
