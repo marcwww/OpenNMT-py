@@ -72,6 +72,13 @@ def save_checkpoint(model, epoch, name='atec'):
     LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
     torch.save(model.state_dict(), model_fname)
 
+def param_sum(param):
+    res=0
+    for p in param:
+        res+=p.data.cpu().numpy().sum()
+
+    return res
+
 def param_del(param_lst1,param_lst2):
     res=0
     for p1,p2 in zip(param_lst1,param_lst2):
@@ -79,34 +86,37 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
+    sum=param_sum(model.parameters())
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
-            model.zero_grad()
-            seq1, seq2, lbl = sample.seq1,\
-                              sample.seq2,\
-                              sample.lbl
+            for _ in range(10000):
+                model.zero_grad()
+                seq1, seq2, lbl = sample.seq1,\
+                                  sample.seq2,\
+                                  sample.lbl
 
-            seq1 = seq1.to(device)
-            seq2 = seq2.to(device)
-            lbl = lbl.type(torch.FloatTensor).to(device)
+                seq1 = seq1.to(device)
+                seq2 = seq2.to(device)
+                lbl = lbl.type(torch.FloatTensor).to(device)
 
-            # seq : (seq_len,bsz)
-            # lbl : (bsz)
-            decoder_outputs, _, _ = model(seq1,seq2,device)
-            # decoder_outputs : (1,bsz,hdim)
-            decoder_output = decoder_outputs.squeeze(0)
-            # probs : (bsz)
-            probs = model.generator(decoder_output).squeeze(1)
-            loss = criterion(probs,lbl)
-            loss.backward()
-            # clip_grads(model)
-            optim.step()
+                # seq : (seq_len,bsz)
+                # lbl : (bsz)
+                decoder_outputs, _, _ = model(seq1,seq2,device)
+                # decoder_outputs : (1,bsz,hdim)
+                decoder_output = decoder_outputs.squeeze(0)
+                # probs : (bsz)
+                probs = model.generator(decoder_output).squeeze(1)
+                loss = criterion(probs,lbl)
+                loss.backward()
+                print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
+                sum=param_sum(model.parameters())
+                # clip_grads(model)
+                optim.step()
 
-            loss_val = loss.data.item()
-            percent = i/len(train_iter)
-            progress_bar(percent,loss_val,epoch)
+                loss_val = loss.data.item()
+                percent = i/len(train_iter)
+                progress_bar(percent,loss_val,epoch)
 
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch)
