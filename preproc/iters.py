@@ -34,7 +34,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
     SEQ2.build_vocab(train)
     train_iter, val_iter = torchtext.data.Iterator.splits(
         (train, valid), batch_sizes=(bsz, bsz),
-        device=-1, repeat=False
+        device=-1, repeat=False, sort=False
     )
 
     return SEQ1, SEQ2,\
