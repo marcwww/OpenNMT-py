@@ -81,7 +81,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
     pval = param_val(model)
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
-            optim.zero_grad()
+            model.zero_grad()
             seq1, seq2, lbl = sample.seq1,\
                               sample.seq2,\
                               sample.lbl
@@ -144,13 +144,8 @@ if __name__ == '__main__':
 
     model = PhraseSim(encoder,decoder,TGT).to(device)
     model.generator = generator.to(device)
-    # optim = optimizers.build_optim(model,opt,None)
+    optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
-
-    optim = optim.RMSprop(model.parameters(),
-                  momentum=0.9,
-                  alpha=0.95,
-                  lr=0.001)
 
     train(train_iter,val_iter,1000,
           model,optim,criterion,device)
