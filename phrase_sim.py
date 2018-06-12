@@ -71,14 +71,15 @@ def save_checkpoint(model, epoch, name='atec'):
     LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
     torch.save(model.state_dict(), model_fname)
 
-def param_val(model):
-    res = 0
-    for param in model.parameters():
-        res += np.sum(param.data.cpu().numpy())
+def param_del(param_lst1,param_lst2):
+    res=0
+    for p1,p2 in zip(param_lst1,param_lst2):
+        res+=np.abs((p1-p2).data.cpu().numpy().sum())
+
     return res
 
+
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
-    pval = param_val(model)
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
             model.zero_grad()
@@ -99,12 +100,8 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             probs = model.generator(decoder_output).squeeze(1)
             loss = criterion(probs,lbl)
             loss.backward()
-            clip_grads(model)
+            # clip_grads(model)
             optim.step()
-
-            pval_ = param_val(model)
-            print(pval-pval_,pval,pval_)
-            pval = pval_
 
             loss_val = loss.data.item()
             percent = i/len(train_iter)
