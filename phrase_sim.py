@@ -40,9 +40,12 @@ class PhraseSim(nn.Module):
             self.decoder.init_decoder_state(src, memory_bank, enc_final)
 
         # notice the final batch of seq1(seq2) could be smaller
+        bsz = seq1.shape[1]
+        tgt = torch.LongTensor([self.decoder.padding_idx+1]).expand(1, bsz, 1)
+        tgt = tgt.to(device)
 
         decoder_outputs, dec_state, attns = \
-            self.decoder(memory_bank,
+            self.decoder(tgt, memory_bank,
                     enc_state)
 
         return decoder_outputs, dec_state, attns

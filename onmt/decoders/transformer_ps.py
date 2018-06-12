@@ -117,8 +117,6 @@ class TransformerDecoderLayer(nn.Module):
         subsequent_mask = torch.from_numpy(subsequent_mask)
         return subsequent_mask
 
-BOS=10
-
 class TransformerDecoder(nn.Module):
     """
     The Transformer decoder from "Attention is All You Need".
@@ -159,7 +157,6 @@ class TransformerDecoder(nn.Module):
         self.bos_emb = nn.Parameter(torch.randn(1,embedding_dim))
         self.embeddding_dim = embedding_dim
         self.padding_idx = padding_idx
-        self.tgt = torch.LongTensor([BOS])
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
@@ -185,16 +182,12 @@ class TransformerDecoder(nn.Module):
             cache["layer_{}".format(l)] = layer_cache
         return cache
 
-    def forward(self, memory_bank, state, memory_lengths=None,
+    def forward(self, tgt, memory_bank, state, memory_lengths=None,
                 step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
-        bsz = memory_bank.shape[1]
-
-        tgt = self.tgt.expand(1, bsz, 1).cpu()
-
         assert isinstance(state, TransformerDecoderState)
         tgt_len, tgt_batch, _ = tgt.size()
         memory_len, memory_batch, _ = memory_bank.size()
