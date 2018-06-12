@@ -30,6 +30,9 @@ class PhraseSim(nn.Module):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.generator = nn.Sequential(
+            nn.Linear(opt.rnn_size, 1),
+            nn.Sigmoid())
 
     def forward(self, seq1, seq2, device):
         seq1 = seq1.unsqueeze(2)
@@ -131,14 +134,14 @@ if __name__ == '__main__':
                                   opt.self_attn_type,
                                   opt.dropout, opt.tgt_word_vec_size,
                                      SEQ1.vocab.stoi[iters.PAD_WORD])
-    generator = nn.Sequential(
-        nn.Linear(opt.rnn_size, 1),
-        nn.Sigmoid())
+    # generator = nn.Sequential(
+    #     nn.Linear(opt.rnn_size, 1),
+    #     nn.Sigmoid())
 
     device = torch.device(opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu')
 
     model = PhraseSim(encoder,decoder).to(device)
-    model.generator = generator.to(device)
+    # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
 
