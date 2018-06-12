@@ -193,7 +193,7 @@ class TransformerDecoder(nn.Module):
         # CHECKS
         bsz = memory_bank.shape[1]
 
-        tgt = self.tgt.expand(1, bsz, 1)
+        tgt = self.tgt.expand(1, bsz, 1).cpu()
 
         assert isinstance(state, TransformerDecoderState)
         tgt_len, tgt_batch, _ = tgt.size()
