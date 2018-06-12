@@ -80,6 +80,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
     pval = param_val(model)
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
+            optim.optimizer.zero_grad()
             seq1, seq2, lbl = sample.seq1,\
                               sample.seq2,\
                               sample.lbl
