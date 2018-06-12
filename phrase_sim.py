@@ -31,7 +31,6 @@ class PhraseSim(nn.Module):
         self.decoder = decoder
         self.TGT = TGT
 
-
     def forward(self, seq1, seq2, device):
         seq1 = seq1.unsqueeze(2)
         seq2 = seq2.unsqueeze(2)
@@ -71,7 +70,14 @@ def save_checkpoint(model, epoch, name='atec'):
     LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
     torch.save(model.state_dict(), model_fname)
 
+def param_val(model):
+    res = 0
+    for param in model.parameters():
+        res += np.sum(param.data.numpy())
+    return res
+
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
+    pval = param_val(model)
     for epoch in range(nepoches):
         for i, sample in enumerate(train_iter):
             seq1, seq2, lbl = sample.seq1,\
@@ -93,6 +99,10 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             loss.backward()
             clip_grads(model)
             optim.step()
+
+            pval_ = param_val(model)
+            print(pval-pval_,pval,pval_)
+            pval = pval_
 
             loss_val = loss.data.item()
             percent = i/len(train_iter)
@@ -133,7 +143,7 @@ if __name__ == '__main__':
     model = PhraseSim(encoder,decoder,TGT).to(device)
     model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
-    criterion = nn.BCELoss()
+    criterion = nn.BCELoss(size_average=True)
 
     train(train_iter,val_iter,1000,
           model,optim,criterion,device)
