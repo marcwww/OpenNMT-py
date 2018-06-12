@@ -26,11 +26,10 @@ def clip_grads(model):
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder, decoder, TGT):
+    def __init__(self, encoder, decoder):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.TGT = TGT
 
     def forward(self, seq1, seq2, device):
         seq1 = seq1.unsqueeze(2)
@@ -41,13 +40,9 @@ class PhraseSim(nn.Module):
             self.decoder.init_decoder_state(src, memory_bank, enc_final)
 
         # notice the final batch of seq1(seq2) could be smaller
-        bsz = seq1.shape[1]
-
-        tgt = torch.LongTensor([self.TGT.vocab.stoi[BOS_WORD]]).expand(1, bsz, 1)
-        tgt = tgt.to(device)
 
         decoder_outputs, dec_state, attns = \
-            self.decoder(tgt, memory_bank,
+            self.decoder(memory_bank,
                     enc_state)
 
         return decoder_outputs, dec_state, attns
@@ -123,23 +118,23 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    SEQ1, SEQ2, TGT,\
+    SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
-    embeddings_dec = model_builder.build_embeddings(opt, TGT.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                   opt.dropout, embeddings_enc)
     decoder = dec.TransformerDecoder(opt.dec_layers, opt.rnn_size,
                                   opt.global_attention, opt.copy_attn,
                                   opt.self_attn_type,
-                                  opt.dropout, embeddings_dec)
+                                  opt.dropout, opt.tgt_word_vec_size,
+                                     SEQ1.vocab.stoi[iters.PAD_WORD])
     generator = nn.Sequential(
         nn.Linear(opt.rnn_size, 1),
         nn.Sigmoid())
 
     device = torch.device(opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu')
 
-    model = PhraseSim(encoder,decoder,TGT).to(device)
+    model = PhraseSim(encoder,decoder).to(device)
     model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)

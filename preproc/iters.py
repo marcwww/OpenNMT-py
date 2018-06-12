@@ -37,10 +37,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
         device=-1, repeat=False
     )
 
-    TGT = torchtext.data.Field(sequential=True, init_token=BOS_WORD)
-    TGT.build_vocab(valid)
-
-    return SEQ1, SEQ2, TGT,\
+    return SEQ1, SEQ2,\
            train_iter, val_iter
 
 

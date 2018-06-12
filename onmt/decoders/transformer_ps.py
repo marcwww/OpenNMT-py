@@ -117,6 +117,7 @@ class TransformerDecoderLayer(nn.Module):
         subsequent_mask = torch.from_numpy(subsequent_mask)
         return subsequent_mask
 
+BOS=10
 
 class TransformerDecoder(nn.Module):
     """
@@ -148,13 +149,16 @@ class TransformerDecoder(nn.Module):
     """
 
     def __init__(self, num_layers, hidden_size, attn_type,
-                 copy_attn, self_attn_type, dropout, embeddings):
+                 copy_attn, self_attn_type, dropout,
+                 embedding_dim, padding_idx):
         super(TransformerDecoder, self).__init__()
 
         # Basic attributes.
         self.decoder_type = 'transformer'
         self.num_layers = num_layers
-        self.embeddings = embeddings
+        self.bos_emb = nn.Parameter(torch.randn(1,embedding_dim))
+        self.embeddding_dim = embedding_dim
+        self.padding_idx = padding_idx
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
@@ -180,12 +184,17 @@ class TransformerDecoder(nn.Module):
             cache["layer_{}".format(l)] = layer_cache
         return cache
 
-    def forward(self, tgt, memory_bank, state, memory_lengths=None,
+    def forward(self, memory_bank, state, memory_lengths=None,
                 step=None, cache=None):
         """
         See :obj:`onmt.modules.RNNDecoderBase.forward()`
         """
         # CHECKS
+        bsz = memory_bank.shape[1]
+
+        tgt = torch.LongTensor([BOS]).\
+            expand(1, bsz, 1)
+
         assert isinstance(state, TransformerDecoderState)
         tgt_len, tgt_batch, _ = tgt.size()
         memory_len, memory_batch, _ = memory_bank.size()
@@ -210,7 +219,7 @@ class TransformerDecoder(nn.Module):
             attns["copy"] = []
 
         # Run the forward pass of the TransformerDecoder.
-        emb = self.embeddings(tgt)
+        emb = self.bos_emb.expand(1,tgt_batch,self.embeddding_dim)
         if state.previous_input is not None:
             emb = emb[state.previous_input.size(0):, ]
         assert emb.dim() == 3  # len x batch x embedding_dim
@@ -218,7 +227,7 @@ class TransformerDecoder(nn.Module):
         output = emb.transpose(0, 1).contiguous()
         src_memory_bank = memory_bank.transpose(0, 1).contiguous()
 
-        padding_idx = self.embeddings.word_padding_idx
+        padding_idx = self.padding_idx
         src_pad_mask = src_words.data.eq(padding_idx).unsqueeze(1) \
             .expand(src_batch, tgt_len, src_len)
         tgt_pad_mask = tgt_words.data.eq(padding_idx).unsqueeze(1) \
