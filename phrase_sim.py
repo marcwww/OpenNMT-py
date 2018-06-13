@@ -72,12 +72,14 @@ def save_checkpoint(model, epoch,
 
     basename = "{}-epoch-{}".format(name,epoch)
     model_fname = basename + ".model"
-    LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
+    # LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
+    print("Saving model checkpoint to: '%s'" % (model_fname))
     torch.save(model.state_dict(), model_fname)
 
     # Save the training history
     train_fname = basename + ".json"
-    LOGGER.info("Saving model training history to '%s'", train_fname)
+    # LOGGER.info("Saving model training history to '%s'", train_fname)
+    print("Saving model training history to '%s'" % (train_fname))
     content = {
         'loss': losses,
         'accuracy': accurs,
@@ -143,7 +145,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
-        LOGGER.info("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f", accurracy, precision, recall, f1)
+        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f" % (accurracy, precision, recall, f1))
         accurs.extend([accurracy for _ in range(nbatch)])
         precs.extend([precision for _ in range(nbatch)])
         recalls.extend([recall for _ in range(nbatch)])
@@ -227,7 +229,7 @@ if __name__ == '__main__':
         location = {'cuda:'+str(opt.gpu):'cuda:'+str(opt.gpu)} if opt.gpu !=-1 else 'cpu'
         model_dict = torch.load(model_fname, map_location=location)
         model.load_state_dict(model_dict)
-        LOGGER.info("Loading model from '%s'",model_fname)
+        print("Loading model from '%s'" % (model_fname))
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)

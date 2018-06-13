@@ -270,6 +270,11 @@ class Trainer(object):
                 outputs, attns, dec_state = \
                     self.model(src, tgt, src_lengths, dec_state)
 
+                sum=0
+                for param in self.model.parameters():
+                    sum+=param.data.numpy().sum()
+                print(sum)
+
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
                     batch, outputs, attns, j,
