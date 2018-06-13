@@ -191,6 +191,7 @@ if __name__ == '__main__':
     if opt.load_idx != -1:
         basename = "{}-epoch-{}".format('atec', opt.load_idx)
         model_fname = basename + ".model"
+        location = {'cuda:'+str(opt.gpu):'cuda:'+str(opt.gpu)} if opt.gpu !=-1 else 'cpu'
         model_dict = torch.load(model_fname, map_location=location)
         model.load_state_dict(model_dict)
         print(valid(val_iter,model))
