@@ -4,7 +4,7 @@ from preproc import iters
 from onmt import model_builder
 from onmt.utils import optimizers
 from itertools import count
-from onmt.encoders import transformer_ps as enc
+from onmt.encoders import transformer as enc
 from onmt.decoders import transformer_ps as dec
 from torch import nn
 import torch
@@ -122,7 +122,7 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train_batch(sample, model, criterion, optim, class_weight):
+def train_batch(sample, model, criterion, optim):
     model.train()
 
     model.zero_grad()
@@ -132,21 +132,14 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor)
+    lbl = lbl.type(torch.FloatTensor).to(device)
 
-    bs_weight = lbl.clone().\
-        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-
-    criterion.weight = bs_weight.to(device)
-
-    lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
     memory_bank = model(seq1, seq2, device)
     # decoder_outputs : (1,bsz,hdim)
     # probs : (bsz)
     probs = model.generator(memory_bank).squeeze(1)
-
     loss = criterion(probs, lbl)
     loss.backward()
     # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
@@ -164,8 +157,7 @@ def restore_log(opt):
     return history['loss'],history['accuracy'],\
            history['precs'],history['recalls'],history['f1s']
 
-def train(train_iter, val_iter, epoch, model,
-          optim, criterion, opt, class_weight):
+def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -186,7 +178,7 @@ def train(train_iter, val_iter, epoch, model,
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim,class_weight)
+            loss = train_batch(sample,model,criterion,optim)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -231,23 +223,18 @@ def valid(val_iter,model):
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
+            nw = (probs-lbl).apply_(lambda x: 0 if x == 0 else 1).numpy().sum()
+
+            bsz = lbl.shape[0]
+            nc += (bsz-nw)
+            nt += bsz
+
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
     recall =metrics.recall_score(np.array(lbl_lst),np.array(pred_lst))
     f1 = metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
 
     return accurracy, precision, recall, f1
-
-def dataset_weigth(train_iter):
-    npos = 0
-    nneg = 0
-    for sample in train_iter:
-        if sample.lbl.numpy()[0] == 1:
-            npos += 1
-        else:
-            nneg += 1
-
-    return {'wpos':1-npos/(npos+nneg),'wneg':1-nneg/(npos+nneg)}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -262,23 +249,9 @@ if __name__ == '__main__':
 
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
-
-    class_weight = dataset_weigth(train_iter)
-
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                   opt.dropout, embeddings_enc)
-    decoder = dec.TransformerDecoder(opt.dec_layers, opt.rnn_size,
-                                  opt.global_attention, opt.copy_attn,
-                                  opt.self_attn_type,
-                                  opt.dropout, opt.tgt_word_vec_size,
-                                     SEQ1.vocab.stoi[iters.PAD_WORD])
-    # print(param_sum(embeddings_enc.parameters()),
-    #       param_sum(encoder.parameters()),
-    #       param_sum(decoder.parameters()))
-    # generator = nn.Sequential(
-    #     nn.Linear(opt.rnn_size, 1),
-    #     nn.Sigmoid())
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
@@ -296,9 +269,10 @@ if __name__ == '__main__':
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
+
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt,class_weight)
+          model,optim,criterion,opt)
 

@@ -9,6 +9,7 @@ BOS_WORD = '<s>'
 
 global HOME
 HOME=os.path.abspath('.')
+# HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
@@ -44,10 +45,23 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
 
 if __name__ == '__main__':
     SEQ1, SEQ2, \
-    train_iter, val_iter = build_iters()
+    train_iter, val_iter = build_iters(bsz=4)
 
+    npos=0
+    nneg=0
     for sample in train_iter:
-        print(sample.seq1.shape,sample.seq2.shape,sample.lbl.shape)
+        if sample.lbl.numpy()[0] == 1:
+            npos+=1
+        else:
+            nneg+=1
+
+    for sample in val_iter:
+        if sample.lbl.numpy()[0] == 1:
+            npos += 1
+        else:
+            nneg += 1
+
+    print(npos,nneg,npos/(npos+nneg))
 #
 #
 # train_iter, val_iter, test_iter = data.Iterator.splits(
