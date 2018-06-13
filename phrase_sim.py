@@ -14,7 +14,7 @@ import numpy as np
 import logging
 import json
 from torch import optim
-import sklearn
+from sklearn import metrics
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -162,7 +162,7 @@ def valid(val_iter,model):
             nc += (bsz-nw)
             nt += bsz
 
-    f1 = sklearn.metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
+    f1 = metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
 
     return f1
 
