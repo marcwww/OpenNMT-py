@@ -222,7 +222,7 @@ def valid(val_iter,model):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.apply_(lambda x: 0 if x < 0.5 else 1)
+            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
