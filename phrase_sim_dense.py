@@ -25,6 +25,9 @@ def clip_grads(model):
     for p in parameters:
         p.grad.data.clamp_(-10, 10)
 
+# class Dense(nn.Module):
+    # def __init__(self, ):
+
 class PhraseSim(nn.Module):
 
     def __init__(self, encoder, decoder):

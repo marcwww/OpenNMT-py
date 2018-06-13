@@ -15,6 +15,7 @@ import logging
 import json
 from torch import optim
 from sklearn import metrics
+import json
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -132,13 +133,26 @@ def train_batch(sample, model, criterion, optim):
 
     return loss
 
-def train(train_iter, val_iter, epoch, model, optim, criterion, device):
+def restore_log(load_idx):
+    basename = "{}-epoch-{}".format('atec', load_idx)
+    json_fname = basename + ".json"
+    history = json.loads(open(json_fname, "rt").read())
+
+    return history['loss'],history['accuracy'],\
+           history['precs'],history['recalls'],history['f1s']
+
+def train(train_iter, val_iter, epoch, model, optim, criterion, load_idx):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
     f1s=[]
     precs=[]
     recalls=[]
+
+    if load_idx != -1:
+        losses,accurs,\
+        precs,recalls,\
+        f1s=restore_log(load_idx)
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
@@ -252,9 +266,9 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
 
-    epoch = {'start':opt.load_idx,
+    epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,device)
+          model,optim,criterion,opt.load_idx)
 
