@@ -132,15 +132,18 @@ def train_batch(sample, model, criterion, optim):
 
     return loss
 
-def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
-    sum=param_sum(model.parameters())
+def train(train_iter, val_iter, epoch, model, optim, criterion, device):
+    # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
     f1s=[]
     precs=[]
     recalls=[]
 
-    for epoch in range(nepoches):
+    epoch_start = epoch['start']
+    epoch_end = epoch['end']
+
+    for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
             nbatch += 1
@@ -165,7 +168,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
 
 def valid(val_iter,model):
     model.eval()
-    
+
     nt = 0
     nc = 0
     pred_lst = []
@@ -249,6 +252,9 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
 
-    train(train_iter,val_iter,10000,
+    epoch = {'start':opt.load_idx,
+             'end':10000}
+
+    train(train_iter,val_iter,epoch,
           model,optim,criterion,device)
 
