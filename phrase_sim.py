@@ -53,7 +53,6 @@ class PhraseSim(nn.Module):
 
         return decoder_outputs, dec_state, attns
 
-
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
@@ -130,6 +129,33 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch,losses)
 
+def valid(val_iter,model):
+    nt=0
+    nc=0
+    with torch.no_grad():
+        for i, sample in enumerate(val_iter):
+            seq1, seq2, lbl = sample.seq1,\
+                              sample.seq2,\
+                              sample.lbl
+
+            seq1 = seq1.to(device)
+            seq2 = seq2.to(device)
+            lbl = lbl.type(torch.FloatTensor)
+
+            # seq : (seq_len,bsz)
+            # lbl : (bsz)
+            decoder_outputs, _, _ = model(seq1,seq2,device)
+            # decoder_outputs : (1,bsz,hdim)
+            decoder_output = decoder_outputs.squeeze(0)
+            # probs : (bsz)
+            probs = model.generator(decoder_output).squeeze(1).cpu()
+            probs.apply_(lambda x: 0 if x < 0.5 else 1)
+            nw = (probs-lbl).apply_(lambda x: 0 if x == 0 else 1).numpy().sum()
+            bsz = lbl.shape[0]
+            nc += (bsz-nw)
+            nt += bsz
+
+    return nc/nt
 
 
 if __name__ == '__main__':
@@ -157,9 +183,19 @@ if __name__ == '__main__':
     #     nn.Linear(opt.rnn_size, 1),
     #     nn.Sigmoid())
 
-    device = torch.device(opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu')
+    location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
+    device = torch.device(location)
 
-    model = PhraseSim(encoder,decoder).to(device)
+    model = PhraseSim(encoder, decoder).to(device)
+    # print(model.state_dict())
+    if opt.load_idx != -1:
+        basename = "{}-epoch-{}".format('atec', opt.load_idx)
+        model_fname = basename + ".model"
+        model_dict = torch.load(model_fname, map_location=location)
+        model.load_state_dict(model_dict)
+        print(valid(val_iter,model))
+        exit()
+
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
