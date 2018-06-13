@@ -162,9 +162,12 @@ def valid(val_iter,model):
             nc += (bsz-nw)
             nt += bsz
 
+    accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
+    precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
+    recall =metrics.recall_score(np.array(lbl_lst),np.array(pred_lst))
     f1 = metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
 
-    return f1
+    return accurracy, precision, recall, f1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
