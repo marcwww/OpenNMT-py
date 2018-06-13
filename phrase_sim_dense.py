@@ -236,16 +236,15 @@ def valid(val_iter,model):
 
     return accurracy, precision, recall, f1
 
-def dataset_weigth(train_iter):
+def dataset_weight(train_iter):
     npos = 0
     nneg = 0
     for sample in train_iter:
-        if sample.lbl.numpy()[0] == 1:
-            npos += 1
-        else:
-            nneg += 1
+        b_npos = sample.lbl.numpy().sum()
+        npos += b_npos
+        nneg += sample.lbl.shape[0] - b_npos
 
-    return {'wpos':1-npos/(npos+nneg),'wneg':1-nneg/(npos+nneg)}
+    return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -261,7 +260,7 @@ if __name__ == '__main__':
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
-    class_weight = dataset_weigth(train_iter)
+    class_weight = dataset_weight(train_iter)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
