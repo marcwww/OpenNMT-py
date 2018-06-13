@@ -14,6 +14,7 @@ import numpy as np
 import logging
 import json
 from torch import optim
+import sklearn
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -130,8 +131,10 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             save_checkpoint(model,epoch,losses)
 
 def valid(val_iter,model):
-    nt=0
-    nc=0
+    nt = 0
+    nc = 0
+    pred_lst = []
+    lbl_lst = []
     with torch.no_grad():
         for i, sample in enumerate(val_iter):
             seq1, seq2, lbl = sample.seq1,\
@@ -150,13 +153,18 @@ def valid(val_iter,model):
             # probs : (bsz)
             probs = model.generator(decoder_output).squeeze(1).cpu()
             probs.apply_(lambda x: 0 if x < 0.5 else 1)
+            pred_lst.extend(probs.numpy())
+            lbl_lst.extend(lbl.numpy())
+
             nw = (probs-lbl).apply_(lambda x: 0 if x == 0 else 1).numpy().sum()
+
             bsz = lbl.shape[0]
             nc += (bsz-nw)
             nt += bsz
 
-    return nc/nt
+    f1 = sklearn.metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
 
+    return f1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
