@@ -69,7 +69,7 @@ def progress_clean():
 def save_checkpoint(model, epoch,
                     losses, accurs,
                     precs, recalls,
-                    f1s, name='atec'):
+                    f1s, name):
     progress_clean()
 
     basename = "{}-epoch-{}".format(name,epoch)
@@ -133,15 +133,15 @@ def train_batch(sample, model, criterion, optim):
 
     return loss
 
-def restore_log(load_idx):
-    basename = "{}-epoch-{}".format('atec', load_idx)
+def restore_log(opt):
+    basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
     json_fname = basename + ".json"
     history = json.loads(open(json_fname, "rt").read())
 
     return history['loss'],history['accuracy'],\
            history['precs'],history['recalls'],history['f1s']
 
-def train(train_iter, val_iter, epoch, model, optim, criterion, load_idx):
+def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -149,10 +149,10 @@ def train(train_iter, val_iter, epoch, model, optim, criterion, load_idx):
     precs=[]
     recalls=[]
 
-    if load_idx != -1:
+    if opt.load_idx != -1:
         losses,accurs,\
         precs,recalls,\
-        f1s=restore_log(load_idx)
+        f1s=restore_log(opt.load_idx)
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
@@ -178,7 +178,7 @@ def train(train_iter, val_iter, epoch, model, optim, criterion, load_idx):
         f1s.append([f1 for _ in range(nbatch)])
 
         if (epoch+1) % SAVE_PER == 0:
-            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s)
+            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter,model):
     model.eval()
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     model = PhraseSim(encoder, decoder).to(device)
     # print(model.state_dict())
     if opt.load_idx != -1:
-        basename = "{}-epoch-{}".format('atec', opt.load_idx)
+        basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
         model_fname = basename + ".model"
         location = {'cuda:'+str(opt.gpu):'cuda:'+str(opt.gpu)} if opt.gpu !=-1 else 'cpu'
         model_dict = torch.load(model_fname, map_location=location)

@@ -15,6 +15,7 @@ import logging
 import json
 from torch import optim
 from sklearn import metrics
+import json
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -25,37 +26,52 @@ def clip_grads(model):
     for p in parameters:
         p.grad.data.clamp_(-10, 10)
 
-# class Dense(nn.Module):
-    # def __init__(self, ):
+class Dense(nn.Module):
+
+    def __init__(self, max_length, rnn_size):
+        super(Dense, self).__init__()
+        self.linear = nn.Linear(max_length*rnn_size,1)
+        padding_base = torch.zeros(1)
+        self.register_buffer('padding_base',padding_base)
+        self.max_length = max_length
+        self.rnn_size = rnn_size
+
+    def forward(self, memory_bank):
+        # memory_bank: (seq_len, bsz, hdim)
+        seq_len, bsz, hdim = memory_bank.shape
+        padding_base = self.padding_base.\
+            expand(self.max_length,bsz,self.rnn_size).\
+            clone()
+        # mem_padded: (max_len, bsz, hdim)
+        padding_base[:seq_len,:,:] += memory_bank
+        mem_padded = padding_base
+        # mem_transpose: (bsz, max_len, hdim)
+        mem_transpose = mem_padded.transpose(0,1).contiguous()
+        # mem_flatten: (bsz, max_len*hdim)
+        mem_flatten = mem_transpose.view(bsz,-1)
+
+        # return: (bsz,1)
+        return self.linear(mem_flatten)
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, opt):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
-        self.decoder = decoder
         self.generator = nn.Sequential(
-            nn.Linear(opt.rnn_size, 1),
+            Dense(opt.max_len_total,opt.rnn_size),
             nn.Sigmoid())
+        # self.generator = nn.Sequential(
+        #     nn.Linear(opt.rnn_size, 1),
+        #     nn.Sigmoid())
 
     def forward(self, seq1, seq2, device):
         seq1 = seq1.unsqueeze(2)
         seq2 = seq2.unsqueeze(2)
 
         enc_final, memory_bank, src = self.encoder(seq1, seq2)
-        enc_state = \
-            self.decoder.init_decoder_state(src, memory_bank, enc_final)
 
-        # notice the final batch of seq1(seq2) could be smaller
-        bsz = seq1.shape[1]
-        tgt = torch.LongTensor([self.decoder.padding_idx+1]).expand(1, bsz, 1)
-        tgt = tgt.to(device)
-
-        decoder_outputs, dec_state, attns = \
-            self.decoder(tgt, memory_bank,
-                    enc_state)
-
-        return decoder_outputs, dec_state, attns
+        return memory_bank
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
@@ -70,7 +86,7 @@ def progress_clean():
 def save_checkpoint(model, epoch,
                     losses, accurs,
                     precs, recalls,
-                    f1s, name='atec'):
+                    f1s, name):
     progress_clean()
 
     basename = "{}-epoch-{}".format(name,epoch)
@@ -106,41 +122,63 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
-    sum=param_sum(model.parameters())
+def train_batch(sample, model, criterion, optim):
+    model.train()
+
+    model.zero_grad()
+    seq1, seq2, lbl = sample.seq1, \
+                      sample.seq2, \
+                      sample.lbl
+
+    seq1 = seq1.to(device)
+    seq2 = seq2.to(device)
+    lbl = lbl.type(torch.FloatTensor).to(device)
+
+    # seq : (seq_len,bsz)
+    # lbl : (bsz)
+    memory_bank = model(seq1, seq2, device)
+    # decoder_outputs : (1,bsz,hdim)
+    # probs : (bsz)
+    probs = model.generator(memory_bank).squeeze(1)
+    loss = criterion(probs, lbl)
+    loss.backward()
+    # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
+    # sum=param_sum(model.parameters())
+    # clip_grads(model)
+    optim.step()
+
+    return loss
+
+def restore_log(opt):
+    basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
+    json_fname = basename + ".json"
+    history = json.loads(open(json_fname, "rt").read())
+
+    return history['loss'],history['accuracy'],\
+           history['precs'],history['recalls'],history['f1s']
+
+def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
+    # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
     f1s=[]
     precs=[]
     recalls=[]
 
-    for epoch in range(nepoches):
+    if opt.load_idx != -1:
+        losses,accurs,\
+        precs,recalls,\
+        f1s=restore_log(opt.load_idx)
+
+    epoch_start = epoch['start']
+    epoch_end = epoch['end']
+
+    for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            model.zero_grad()
-            seq1, seq2, lbl = sample.seq1,\
-                              sample.seq2,\
-                              sample.lbl
-
-            seq1 = seq1.to(device)
-            seq2 = seq2.to(device)
-            lbl = lbl.type(torch.FloatTensor).to(device)
-
-            # seq : (seq_len,bsz)
-            # lbl : (bsz)
-            decoder_outputs, _, _ = model(seq1,seq2,device)
-            # decoder_outputs : (1,bsz,hdim)
-            decoder_output = decoder_outputs.squeeze(0)
-            # probs : (bsz)
-            probs = model.generator(decoder_output).squeeze(1)
-            loss = criterion(probs,lbl)
-            loss.backward()
-            # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-            # sum=param_sum(model.parameters())
-            # clip_grads(model)
-            optim.step()
+            loss = train_batch(sample,model,criterion,optim)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -156,9 +194,11 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
         f1s.append([f1 for _ in range(nbatch)])
 
         if (epoch+1) % SAVE_PER == 0:
-            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s)
+            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter,model):
+    model.eval()
+
     nt = 0
     nc = 0
     pred_lst = []
@@ -228,10 +268,10 @@ if __name__ == '__main__':
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
 
-    model = PhraseSim(encoder, decoder).to(device)
+    model = PhraseSim(encoder,opt).to(device)
     # print(model.state_dict())
     if opt.load_idx != -1:
-        basename = "{}-epoch-{}".format('atec', opt.load_idx)
+        basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
         model_fname = basename + ".model"
         location = {'cuda:'+str(opt.gpu):'cuda:'+str(opt.gpu)} if opt.gpu !=-1 else 'cpu'
         model_dict = torch.load(model_fname, map_location=location)
@@ -242,6 +282,9 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
 
-    train(train_iter,val_iter,10000,
-          model,optim,criterion,device)
+    epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
+             'end':10000}
+
+    train(train_iter,val_iter,epoch,
+          model,optim,criterion,opt)
 

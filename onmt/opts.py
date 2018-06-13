@@ -224,6 +224,7 @@ def train_opts(parser):
                        ".valid.pt" file path from preprocess.py""")
 
     group.add_argument('-load_idx', default=-1, type=int)
+    group.add_argument('-max_len_total', default=200,type=int)
 
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as
@@ -379,7 +380,7 @@ def train_opts(parser):
                        help="Print stats at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
-    group.add_argument('-exp', type=str, default="",
+    group.add_argument('-exp', type=str, default="demo",
                        help="Name of the experiment for logging.")
     # Use TensorboardX for visualization during training
     group.add_argument('-tensorboard', action="store_true",
