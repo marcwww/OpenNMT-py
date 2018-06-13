@@ -154,7 +154,8 @@ class TransformerDecoder(nn.Module):
         # Basic attributes.
         self.decoder_type = 'transformer'
         self.num_layers = num_layers
-        self.bos_emb = nn.Parameter(torch.randn(1,embedding_dim))
+        bos_emb = nn.init.xavier_uniform_(torch.empty(1, embedding_dim))
+        self.bos_emb = nn.Parameter(bos_emb)
         self.embeddding_dim = embedding_dim
         self.padding_idx = padding_idx
 

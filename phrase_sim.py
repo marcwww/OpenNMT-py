@@ -135,7 +135,7 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             loss = criterion(probs,lbl)
             loss.backward()
             # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-            sum=param_sum(model.parameters())
+            # sum=param_sum(model.parameters())
             # clip_grads(model)
             optim.step()
 
@@ -145,7 +145,8 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
-        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f" % (accurracy, precision, recall, f1))
+        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
+              (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
         accurs.extend([accurracy for _ in range(nbatch)])
         precs.extend([precision for _ in range(nbatch)])
         recalls.extend([recall for _ in range(nbatch)])
@@ -214,6 +215,9 @@ if __name__ == '__main__':
                                   opt.self_attn_type,
                                   opt.dropout, opt.tgt_word_vec_size,
                                      SEQ1.vocab.stoi[iters.PAD_WORD])
+    # print(param_sum(embeddings_enc.parameters()),
+    #       param_sum(encoder.parameters()),
+    #       param_sum(decoder.parameters()))
     # generator = nn.Sequential(
     #     nn.Linear(opt.rnn_size, 1),
     #     nn.Sigmoid())

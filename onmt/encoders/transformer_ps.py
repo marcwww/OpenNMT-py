@@ -81,7 +81,8 @@ class TransformerEncoder(EncoderBase):
             [TransformerEncoderLayer(hidden_size, dropout)
              for _ in range(num_layers)])
         self.layer_norm = onmt.modules.LayerNorm(hidden_size)
-        self.src2_bias = nn.Parameter(torch.randn(1))
+        src2_bias = nn.init.xavier_uniform_(torch.empty(1, embeddings.embedding_size))
+        self.src2_bias = nn.Parameter(src2_bias)
 
     def forward(self, src1, src2):
         """ See :obj:`EncoderBase.forward()`"""
