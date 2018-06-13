@@ -42,7 +42,6 @@ class PhraseSim(nn.Module):
         enc_final, memory_bank, src = self.encoder(seq1, seq2)
         enc_state = \
             self.decoder.init_decoder_state(src, memory_bank, enc_final)
-        # memory_bank: (seq_len, bsz, hdim)
 
         # notice the final batch of seq1(seq2) could be smaller
         bsz = seq1.shape[1]
@@ -104,34 +103,6 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train_batch(sample, model, criterion, optim):
-    model.train()
-
-    model.zero_grad()
-    seq1, seq2, lbl = sample.seq1, \
-                      sample.seq2, \
-                      sample.lbl
-
-    seq1 = seq1.to(device)
-    seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor).to(device)
-
-    # seq : (seq_len,bsz)
-    # lbl : (bsz)
-    decoder_outputs, _, _ = model(seq1, seq2, device)
-    # decoder_outputs : (1,bsz,hdim)
-    decoder_output = decoder_outputs.squeeze(0)
-    # probs : (bsz)
-    probs = model.generator(decoder_output).squeeze(1)
-    loss = criterion(probs, lbl)
-    loss.backward()
-    # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-    # sum=param_sum(model.parameters())
-    # clip_grads(model)
-    optim.step()
-
-    return loss
-
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
     sum=param_sum(model.parameters())
     losses=[]
@@ -145,7 +116,28 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim)
+            model.zero_grad()
+            seq1, seq2, lbl = sample.seq1,\
+                              sample.seq2,\
+                              sample.lbl
+
+            seq1 = seq1.to(device)
+            seq2 = seq2.to(device)
+            lbl = lbl.type(torch.FloatTensor).to(device)
+
+            # seq : (seq_len,bsz)
+            # lbl : (bsz)
+            decoder_outputs, _, _ = model(seq1,seq2,device)
+            # decoder_outputs : (1,bsz,hdim)
+            decoder_output = decoder_outputs.squeeze(0)
+            # probs : (bsz)
+            probs = model.generator(decoder_output).squeeze(1)
+            loss = criterion(probs,lbl)
+            loss.backward()
+            # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
+            # sum=param_sum(model.parameters())
+            # clip_grads(model)
+            optim.step()
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -164,8 +156,6 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s)
 
 def valid(val_iter,model):
-    model.eval()
-    
     nt = 0
     nc = 0
     pred_lst = []

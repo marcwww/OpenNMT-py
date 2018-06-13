@@ -7,6 +7,7 @@ PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 
+global HOME
 HOME=os.path.abspath('.')
 DATA=os.path.join(HOME,'data')
 
@@ -41,6 +42,12 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
            train_iter, val_iter
 
 
+if __name__ == '__main__':
+    SEQ1, SEQ2, \
+    train_iter, val_iter = build_iters()
+
+    for sample in train_iter:
+        print(sample.seq1.shape,sample.seq2.shape,sample.lbl.shape)
 #
 #
 # train_iter, val_iter, test_iter = data.Iterator.splits(
