@@ -218,8 +218,8 @@ def valid(val_iter,model):
             memory_bank = model(seq1, seq2, device)
             # decoder_outputs : (1,bsz,hdim)
             # probs : (bsz)
-            probs = model.generator(memory_bank).squeeze(1)
-            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            probs = model.generator(memory_bank).squeeze(1).cpu()
+            pred = probs.apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
