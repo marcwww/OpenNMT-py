@@ -105,7 +105,7 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train_batch(sample, model, criterion, optim):
+def train_batch(sample, model, criterion, optim, class_weight):
     model.train()
 
     model.zero_grad()
@@ -115,7 +115,12 @@ def train_batch(sample, model, criterion, optim):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor).to(device)
+    lbl = lbl.type(torch.FloatTensor)
+
+    bs_weight = lbl.clone(). \
+        apply_(lambda x: class_weight['wneg'] if x == 0 else class_weight['wpos'])
+    criterion.weight = bs_weight.to(device)
+    lbl = lbl.to(device)
 
     # seq : (seq_len,bsz)
     # lbl : (bsz)
@@ -141,7 +146,7 @@ def restore_log(opt):
     return history['loss'],history['accuracy'],\
            history['precs'],history['recalls'],history['f1s']
 
-def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
+def train(train_iter, val_iter, epoch, model, optim, criterion, opt, class_weight):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -162,7 +167,7 @@ def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim)
+            loss = train_batch(sample,model,criterion,optim,class_weight)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -221,6 +226,15 @@ def valid(val_iter,model):
 
     return accurracy, precision, recall, f1
 
+def dataset_weigth(train_iter):
+    npos = 0
+    nneg = 0
+    for sample in train_iter:
+        if sample.lbl.numpy()[0] == 1:
+            npos += 1
+        else:
+            nneg += 1
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='train.py',
@@ -234,6 +248,9 @@ if __name__ == '__main__':
 
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
+
+    class_weight = dataset_weigth(train_iter)
+
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                   opt.dropout, embeddings_enc)
@@ -270,5 +287,5 @@ if __name__ == '__main__':
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt.load_idx)
+          model,optim,criterion,opt,class_weight)
 

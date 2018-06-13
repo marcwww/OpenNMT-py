@@ -207,8 +207,6 @@ def train(train_iter, val_iter, epoch, model,
 def valid(val_iter,model):
     model.eval()
 
-    nt = 0
-    nc = 0
     pred_lst = []
     lbl_lst = []
     with torch.no_grad():
