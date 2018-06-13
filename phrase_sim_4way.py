@@ -26,52 +26,52 @@ def clip_grads(model):
     for p in parameters:
         p.grad.data.clamp_(-10, 10)
 
-class Dense(nn.Module):
+class Avg(nn.Module):
 
-    def __init__(self, max_length, rnn_size):
-        super(Dense, self).__init__()
-        self.linear = nn.Linear(max_length*rnn_size,1)
-        padding_base = torch.zeros(1)
-        self.register_buffer('padding_base',padding_base)
-        self.max_length = max_length
-        self.rnn_size = rnn_size
+    def forward(self, mem_bank):
+        # mem_bank: (seq_len, bsz, hdim)
+        len, bsz, hdim = mem_bank.shape
 
-    def forward(self, memory_bank):
-        # memory_bank: (seq_len, bsz, hdim)
-        seq_len, bsz, hdim = memory_bank.shape
-        padding_base = self.padding_base.\
-            expand(self.max_length,bsz,self.rnn_size).\
-            clone()
-        # mem_padded: (max_len, bsz, hdim)
-        padding_base[:seq_len,:,:] += memory_bank
-        mem_padded = padding_base
-        # mem_transpose: (bsz, max_len, hdim)
-        mem_transpose = mem_padded.transpose(0,1).contiguous()
-        # mem_flatten: (bsz, max_len*hdim)
-        mem_flatten = mem_transpose.view(bsz,-1)
+        return mem_bank.sum(dim=0)/len
 
-        # return: (bsz,1)
-        return self.linear(mem_flatten)
+class FourWay(nn.Module):
+
+    def forward(self, u1, u2):
+        way1 = u1
+        way2 = u2
+        way3 = torch.abs(u1-u2)
+        way4 = u1*u2
+
+        return torch.cat([way1,way2,way3,way4],dim=1)
+
 
 class PhraseSim(nn.Module):
 
     def __init__(self, encoder, opt):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
+        self.avg = Avg()
+        self.fourway =FourWay()
         self.generator = nn.Sequential(
-            Dense(opt.max_len_total,opt.rnn_size),
+            nn.Linear(4*opt.rnn_size,1),
             nn.Sigmoid())
-        # self.generator = nn.Sequential(
-        #     nn.Linear(opt.rnn_size, 1),
-        #     nn.Sigmoid())
 
-    def forward(self, seq1, seq2, device):
+    def forward(self, seq1, seq2):
         seq1 = seq1.unsqueeze(2)
         seq2 = seq2.unsqueeze(2)
 
-        enc_final, memory_bank, src = self.encoder(seq1, seq2)
+        _, memory_bank1 = self.encoder(seq1)
+        _, memory_bank2 = self.encoder(seq2)
+        # memory_bank: (seq_len, bsz, hdim)
 
-        return memory_bank
+        mem_avg1 = self.avg(memory_bank1)
+        mem_avg2 = self.avg(memory_bank2)
+
+        cat_res = self.fourway(mem_avg1,mem_avg2)
+
+        probs = self.generator(cat_res)
+
+        return probs
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
@@ -122,7 +122,7 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train_batch(sample, model, criterion, optim):
+def train_batch(sample, model, criterion, optim, class_weight):
     model.train()
 
     model.zero_grad()
@@ -132,14 +132,20 @@ def train_batch(sample, model, criterion, optim):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor).to(device)
+    lbl = lbl.type(torch.FloatTensor)
 
+    bs_weight = lbl.clone().\
+        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+
+    criterion.weight = bs_weight.to(device)
+
+    lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
-    memory_bank = model(seq1, seq2, device)
+    probs = model(seq1, seq2)
     # decoder_outputs : (1,bsz,hdim)
     # probs : (bsz)
-    probs = model.generator(memory_bank).squeeze(1)
+
     loss = criterion(probs, lbl)
     loss.backward()
     # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
@@ -157,7 +163,8 @@ def restore_log(opt):
     return history['loss'],history['accuracy'],\
            history['precs'],history['recalls'],history['f1s']
 
-def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
+def train(train_iter, val_iter, epoch, model,
+          optim, criterion, opt, class_weight):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -178,7 +185,7 @@ def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim)
+            loss = train_batch(sample,model,criterion,optim,class_weight)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -199,8 +206,6 @@ def train(train_iter, val_iter, epoch, model, optim, criterion, opt):
 def valid(val_iter,model):
     model.eval()
 
-    nt = 0
-    nc = 0
     pred_lst = []
     lbl_lst = []
     with torch.no_grad():
@@ -215,19 +220,11 @@ def valid(val_iter,model):
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
-            memory_bank = model(seq1, seq2, device)
-            # decoder_outputs : (1,bsz,hdim)
+            probs = model(seq1, seq2)
             # probs : (bsz)
-            probs = model.generator(memory_bank).squeeze(1).cpu()
             pred = probs.apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
-
-            nw = (probs-lbl).apply_(lambda x: 0 if x == 0 else 1).numpy().sum()
-
-            bsz = lbl.shape[0]
-            nc += (bsz-nw)
-            nt += bsz
 
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
@@ -235,6 +232,16 @@ def valid(val_iter,model):
     f1 = metrics.f1_score(np.array(lbl_lst),np.array(pred_lst))
 
     return accurracy, precision, recall, f1
+
+def dataset_weight(train_iter):
+    npos = 0
+    nneg = 0
+    for sample in train_iter:
+        b_npos = sample.lbl.numpy().sum()
+        npos += b_npos
+        nneg += sample.lbl.shape[0] - b_npos
+
+    return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -249,6 +256,9 @@ if __name__ == '__main__':
 
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
+
+    class_weight = dataset_weight(train_iter)
+
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                   opt.dropout, embeddings_enc)
@@ -269,10 +279,9 @@ if __name__ == '__main__':
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
-
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt)
+          model,optim,criterion,opt,class_weight)
 
