@@ -64,7 +64,10 @@ def progress_clean():
     """Clean the progress bar."""
     print("\r{}".format(" " * 80), end='\r')
 
-def save_checkpoint(model, epoch, losses, name='atec'):
+def save_checkpoint(model, epoch,
+                    losses, accurs,
+                    precs, recalls,
+                    f1s, name='atec'):
     progress_clean()
 
     basename = "{}-epoch-{}".format(name,epoch)
@@ -76,7 +79,11 @@ def save_checkpoint(model, epoch, losses, name='atec'):
     train_fname = basename + ".json"
     LOGGER.info("Saving model training history to '%s'", train_fname)
     content = {
-        "loss": losses
+        'loss': losses,
+        'accuracy': accurs,
+        'precs': precs,
+        'recalls': recalls,
+        'f1s': f1s
     }
     open(train_fname, 'wt').write(json.dumps(content))
 
@@ -97,8 +104,16 @@ def param_del(param_lst1,param_lst2):
 def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
     sum=param_sum(model.parameters())
     losses=[]
+    accurs=[]
+    f1s=[]
+    precs=[]
+    recalls=[]
+
     for epoch in range(nepoches):
+        nbatch = 0
         for i, sample in enumerate(train_iter):
+            nbatch += 1
+
             model.zero_grad()
             seq1, seq2, lbl = sample.seq1,\
                               sample.seq2,\
@@ -127,8 +142,15 @@ def train(train_iter, val_iter, nepoches, model, optim, criterion, device):
             percent = i/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
+        accurracy, precision, recall, f1 = valid(val_iter,model)
+        LOGGER.info("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f", accurracy, precision, recall, f1)
+        accurs.extend([accurracy for _ in range(nbatch)])
+        precs.extend([precision for _ in range(nbatch)])
+        recalls.extend([recall for _ in range(nbatch)])
+        f1s.append([f1 for _ in range(nbatch)])
+
         if (epoch+1) % SAVE_PER == 0:
-            save_checkpoint(model,epoch,losses)
+            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s)
 
 def valid(val_iter,model):
     nt = 0
@@ -152,8 +174,8 @@ def valid(val_iter,model):
             decoder_output = decoder_outputs.squeeze(0)
             # probs : (bsz)
             probs = model.generator(decoder_output).squeeze(1).cpu()
-            probs.apply_(lambda x: 0 if x < 0.5 else 1)
-            pred_lst.extend(probs.numpy())
+            pred = probs.apply_(lambda x: 0 if x < 0.5 else 1)
+            pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
             nw = (probs-lbl).apply_(lambda x: 0 if x == 0 else 1).numpy().sum()
@@ -205,13 +227,12 @@ if __name__ == '__main__':
         location = {'cuda:'+str(opt.gpu):'cuda:'+str(opt.gpu)} if opt.gpu !=-1 else 'cpu'
         model_dict = torch.load(model_fname, map_location=location)
         model.load_state_dict(model_dict)
-        print(valid(val_iter,model))
-        exit()
+        LOGGER.info("Loading model from '%s'",model_fname)
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     criterion = nn.BCELoss(size_average=True)
 
-    train(train_iter,val_iter,1000,
+    train(train_iter,val_iter,10000,
           model,optim,criterion,device)
 
