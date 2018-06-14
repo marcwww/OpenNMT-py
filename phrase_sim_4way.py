@@ -329,6 +329,12 @@ def init_model(model_opt, model):
         model.encoder.embeddings.load_pretrained_vectors(
             model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
 
+def class_weight(class_probs, e):
+    ppos = class_probs['ppos']
+    pneg = class_probs['pneg']
+    return torch.Tensor([(1-e)*0.5+e*(1-ppos),
+            (1-e)*0.5+e*(1-pneg)])
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='train.py',
@@ -373,10 +379,8 @@ if __name__ == '__main__':
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     # criterion = nn.NLLLoss()
-    class_weight = torch.Tensor([1-class_probs['pneg'],
-                                 1-class_probs['ppos']]).\
-                                to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weight)
+    cweights = class_weight(class_probs, opt.label_smoothing)
+    criterion = nn.CrossEntropyLoss(weight=cweights)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
