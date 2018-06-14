@@ -125,7 +125,10 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def train_batch(sample, model, criterion, optim, class_weight):
+def label_smoothing(lbl, class_probs, e):
+    return lbl.apply_(lambda x:(1-e)*x+e*class_probs['ppos' if x==1 else 'pneg'])
+
+def train_batch(sample, model, criterion, optim, class_probs, opt):
     model.train()
 
     model.zero_grad()
@@ -137,11 +140,12 @@ def train_batch(sample, model, criterion, optim, class_weight):
     seq2 = seq2.to(device)
     lbl = lbl.type(torch.FloatTensor)
 
-    bs_weight = lbl.clone().\
-        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+    lbl = label_smoothing(lbl, class_probs, opt.label_smoothing)
 
-    criterion.weight = bs_weight.to(device)
-
+    # bs_weight = lbl.clone().\
+    #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+    #
+    # criterion.weight = bs_weight.to(device)
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
@@ -167,7 +171,7 @@ def restore_log(opt):
            history['precs'],history['recalls'],history['f1s']
 
 def train(train_iter, val_iter, epoch, model,
-          optim, criterion, opt, class_weight):
+          optim, criterion, opt, class_probs):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -190,7 +194,8 @@ def train(train_iter, val_iter, epoch, model,
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim,class_weight)
+            loss = train_batch(sample,model,criterion,
+                               optim,class_probs,opt)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -248,6 +253,16 @@ def dataset_weight(train_iter):
 
     return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
 
+def class_dist(train_iter):
+    npos = 0
+    nneg = 0
+    for sample in train_iter:
+        b_npos = sample.lbl.numpy().sum()
+        npos += b_npos
+        nneg += sample.lbl.shape[0] - b_npos
+
+    return {'ppos': npos / (npos + nneg), 'pneg': nneg / (npos + nneg)}
+
 def unk_ratio(val_iter,SEQ1):
     nunk = 0
     ntotal = 0
@@ -286,8 +301,10 @@ if __name__ == '__main__':
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
-    class_weight = dataset_weight(train_iter)
-    print('Class weight: ',class_weight)
+    # class_weight = dataset_weight(train_iter)
+    class_probs = class_dist(train_iter)
+    # print('Class weight: ',class_weight)
+    print('Class distribution: ',class_probs)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
@@ -318,5 +335,5 @@ if __name__ == '__main__':
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt,class_weight)
+          model,optim,criterion,opt,class_probs)
 

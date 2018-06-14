@@ -246,6 +246,21 @@ def dataset_weight(train_iter):
 
     return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
 
+def init_model(model_opt, model):
+    if model_opt.param_init != 0.0:
+        print('Intializing model parameters.')
+        for p in model.parameters():
+            p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+
+    if model_opt.param_init_glorot:
+        for p in model.parameters():
+            if p.dim() > 1:
+                xavier_uniform_(p)
+
+    if hasattr(model.encoder, 'embeddings'):
+        model.encoder.embeddings.load_pretrained_vectors(
+            model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='train.py',
@@ -261,6 +276,7 @@ if __name__ == '__main__':
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
     class_weight = dataset_weight(train_iter)
+    print('Class weight: ', class_weight)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
@@ -281,6 +297,11 @@ if __name__ == '__main__':
     device = torch.device(location)
 
     model = PhraseSim(encoder,opt).to(device)
+
+    print('Param sum before init: ', param_sum(model.parameters()))
+    init_model(opt, model)
+    print('Param sum after init: ', param_sum(model.parameters()))
+
     # print(model.state_dict())
     if opt.load_idx != -1:
         basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
