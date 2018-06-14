@@ -16,6 +16,7 @@ import json
 from torch import optim
 from sklearn import metrics
 import json
+from torch.nn.init import xavier_uniform_
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -207,7 +208,7 @@ def train(train_iter, val_iter, epoch, model,
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
-def valid(val_iter,model):
+def valid(val_iter, model):
     model.eval()
 
     pred_lst = []
@@ -256,6 +257,21 @@ def unk_ratio(val_iter,SEQ1):
             ntotal += sample.seq1.shape[0] * sample.seq1.shape[0]
     print(nunk / ntotal, nunk, ntotal)
 
+def init_model(model_opt, model):
+    if model_opt.param_init != 0.0:
+        print('Intializing model parameters.')
+        for p in model.parameters():
+            p.data.uniform_(-model_opt.param_init, model_opt.param_init)
+
+    if model_opt.param_init_glorot:
+        for p in model.parameters():
+            if p.dim() > 1:
+                xavier_uniform_(p)
+
+    if hasattr(model.encoder, 'embeddings'):
+        model.encoder.embeddings.load_pretrained_vectors(
+            model_opt.pre_word_vecs_enc, model_opt.fix_word_vecs_enc)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='train.py',
@@ -280,6 +296,11 @@ if __name__ == '__main__':
     device = torch.device(location)
 
     model = PhraseSim(encoder,opt).to(device)
+    print(param_sum(model.parameters()))
+    init_model(opt, model)
+    print(param_sum(model.parameters()))
+
+
     # print(model.state_dict())
     if opt.load_idx != -1:
         basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
