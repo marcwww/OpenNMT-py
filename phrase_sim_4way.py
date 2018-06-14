@@ -132,7 +132,8 @@ def param_del(param_lst1,param_lst2):
     return res
 
 def label_smoothing(lbl, class_probs, e):
-    return lbl.apply_(lambda x:(1-e)*x+e*class_probs['ppos' if x==1 else 'pneg'])
+    return lbl\
+        .apply_(lambda x:(1-e)*x+e*class_probs['ppos' if x==1 else 'pneg'])
 
 def train_batch(sample, model, criterion, optim, class_probs, opt):
     model.train()
@@ -192,9 +193,10 @@ def train_batches(samples, model, criterion, optim, class_probs, opt):
         # seq : (seq_len,bsz)
         # lbl : (bsz)
         probs = model(seq1, seq2)
+        probs = probs.topk(k=1)[0]
         # decoder_outputs : (1,bsz,hdim)
-        # probs : (bsz)
-
+        # probs : (bsz, 2)
+        # criterion.weight = class_weight.to(device)
         loss = criterion(probs, lbl)
         loss.backward()
         losses.append(loss.data.item())
@@ -379,7 +381,8 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
-    criterion = nn.NLLLoss()
+    # criterion = nn.NLLLoss()
+    criterion = nn.KLDivLoss()
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
