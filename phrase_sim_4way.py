@@ -132,7 +132,7 @@ def param_del(param_lst1,param_lst2):
     return res
 
 def label_smoothing(lbl, class_probs, e):
-    return lbl\
+    return lbl.clone()\
         .apply_(lambda x:(1-e)*x+e*class_probs['ppos' if x==1 else 'pneg'])
 
 def train_batch(sample, model, criterion, optim, class_probs, opt):
@@ -183,21 +183,17 @@ def train_batches(samples, model, criterion, optim, class_probs, opt):
         seq2 = seq2.to(device)
         lbl = lbl.type(torch.FloatTensor)
 
-        lbl = label_smoothing(lbl, class_probs, opt.label_smoothing)
+        lbl_smoothed = label_smoothing(lbl, class_probs, opt.label_smoothing).unsqueeze(1)
+        # lbl_smoothed : (bsz, 1)
 
-        # bs_weight = lbl.clone().\
-        #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-        #
-        # criterion.weight = bs_weight.to(device)
         lbl = lbl.to(device)
-        # seq : (seq_len,bsz)
-        # lbl : (bsz)
+
+        # lbl_smoothed : (bsz, 2)
+        lbl_smoothed = torch.stack([1-lbl_smoothed,lbl_smoothed],dim=1).squeeze(-1)
         probs = model(seq1, seq2)
-        probs = probs.topk(k=1)[0].squeeze(-1)
-        # decoder_outputs : (1,bsz,hdim)
         # probs : (bsz, 2)
         # criterion.weight = class_weight.to(device)
-        loss = criterion(probs, lbl)
+        loss = criterion(probs, lbl_smoothed)
         loss.backward()
         losses.append(loss.data.item())
         # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
