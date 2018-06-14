@@ -181,7 +181,8 @@ def train_batches(samples, model, criterion, optim):
 
         seq1 = seq1.to(device)
         seq2 = seq2.to(device)
-        lbl = lbl.type(torch.FloatTensor).to(device)
+        # lbl = lbl.type(torch.FloatTensor).to(device)
+        lbl = lbl.to(device)
         # lbl: (bsz)
         probs = model(seq1, seq2)
         # probs : (bsz, 2)
