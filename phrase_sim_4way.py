@@ -160,7 +160,44 @@ def train_batch(sample, model, criterion, optim, class_probs, opt):
     # clip_grads(model)
     optim.step()
 
-    return loss
+    return loss.data.item()
+
+def train_batches(samples, model, criterion, optim, class_probs, opt):
+    model.train()
+
+    model.zero_grad()
+    losses=[]
+    for sample in samples:
+        seq1, seq2, lbl = sample.seq1, \
+                          sample.seq2, \
+                          sample.lbl
+
+        seq1 = seq1.to(device)
+        seq2 = seq2.to(device)
+        lbl = lbl.type(torch.FloatTensor)
+
+        lbl = label_smoothing(lbl, class_probs, opt.label_smoothing)
+
+        # bs_weight = lbl.clone().\
+        #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+        #
+        # criterion.weight = bs_weight.to(device)
+        lbl = lbl.to(device)
+        # seq : (seq_len,bsz)
+        # lbl : (bsz)
+        probs = model(seq1, seq2)
+        # decoder_outputs : (1,bsz,hdim)
+        # probs : (bsz)
+
+        loss = criterion(probs, lbl)
+        loss.backward()
+        losses.append(loss.data.item())
+        # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
+        # sum=param_sum(model.parameters())
+        # clip_grads(model)
+    optim.step()
+
+    return np.array(losses).sum()/len(losses)
 
 def restore_log(opt):
     basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
@@ -189,18 +226,22 @@ def train(train_iter, val_iter, epoch, model,
 
     valid(val_iter,model)
 
+    samples = []
     for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
             nbatch += 1
+            samples.append(sample)
 
-            loss = train_batch(sample,model,criterion,
-                               optim,class_probs,opt)
+            if len(samples) == opt.accum_count:
+                loss_val = train_batches(samples,model,criterion,
+                                   optim,class_probs,opt)
 
-            loss_val = loss.data.item()
-            losses.append(loss_val)
-            percent = i/len(train_iter)
-            progress_bar(percent,loss_val,epoch)
+                losses.append(loss_val)
+                percent = i/len(train_iter)
+                progress_bar(percent,loss_val,epoch)
+
+                samples = []
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
