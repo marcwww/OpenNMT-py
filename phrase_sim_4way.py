@@ -287,6 +287,7 @@ if __name__ == '__main__':
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
     class_weight = dataset_weight(train_iter)
+    print('Class weight: ',class_weight)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
@@ -296,9 +297,9 @@ if __name__ == '__main__':
     device = torch.device(location)
 
     model = PhraseSim(encoder,opt).to(device)
-    print(param_sum(model.parameters()))
+    print('Param sum before init: ', param_sum(model.parameters()))
     init_model(opt, model)
-    print(param_sum(model.parameters()))
+    print('Param sum after init: ', param_sum(model.parameters()))
 
 
     # print(model.state_dict())

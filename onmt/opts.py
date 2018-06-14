@@ -260,7 +260,7 @@ def train_opts(parser):
                        help="""Parameters are initialized over uniform distribution
                        with support (-param_init, param_init).
                        Use 0 to not use initialization""")
-    group.add_argument('-param_init_glorot', action='store_true',
+    group.add_argument('-param_init_glorot', action='store_true', default=True,
                        help="""Init parameters with xavier_uniform.
                        Required for transfomer.""")
 
