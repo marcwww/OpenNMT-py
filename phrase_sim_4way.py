@@ -379,7 +379,8 @@ if __name__ == '__main__':
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     # criterion = nn.NLLLoss()
-    cweights = class_weight(class_probs, opt.label_smoothing)
+    cweights = class_weight(class_probs, opt.label_smoothing).\
+        to(device)
     criterion = nn.CrossEntropyLoss(weight=cweights)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
