@@ -279,8 +279,8 @@ def valid(val_iter, model):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz, 2)
-            cmp = probs[:,0]-probs[:,1]
-            cmp.cpu().apply_(lambda x:0 if x>0 else 1)
+            cmp = (probs[:,0]-probs[:,1]).cpu()
+            cmp.apply_(lambda x:0 if x>0 else 1)
             # pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(cmp.numpy())
             lbl_lst.extend(lbl.numpy())
