@@ -373,7 +373,8 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model,opt,None)
     # criterion = nn.NLLLoss()
     class_weight = torch.Tensor([1-class_probs['pneg'],
-                                 1-class_probs['ppos']])
+                                 1-class_probs['ppos']]).\
+                                to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weight)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
