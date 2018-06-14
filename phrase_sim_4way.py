@@ -193,7 +193,7 @@ def train_batches(samples, model, criterion, optim, class_probs, opt):
         # seq : (seq_len,bsz)
         # lbl : (bsz)
         probs = model(seq1, seq2)
-        probs = probs.topk(k=1)[0]
+        probs = probs.topk(k=1)[0].squeeze(-1)
         # decoder_outputs : (1,bsz,hdim)
         # probs : (bsz, 2)
         # criterion.weight = class_weight.to(device)
