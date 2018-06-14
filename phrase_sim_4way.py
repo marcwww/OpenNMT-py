@@ -53,11 +53,16 @@ class PhraseSim(nn.Module):
         self.encoder = encoder
         self.avg = Avg()
         self.fourway =FourWay()
+        # self.generator = nn.Sequential(
+        #     nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
+        #     nn.ReLU(),
+        #     nn.Linear(1*opt.rnn_size,1),
+        #     nn.Sigmoid())
         self.generator = nn.Sequential(
             nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
             nn.ReLU(),
-            nn.Linear(1*opt.rnn_size,1),
-            nn.Sigmoid())
+            nn.Linear(1*opt.rnn_size,2),
+            nn.Softmax())
 
     def forward(self, seq1, seq2):
         seq1 = seq1.unsqueeze(2)
@@ -72,6 +77,7 @@ class PhraseSim(nn.Module):
 
         cat_res = self.fourway(mem_avg1,mem_avg2)
 
+        # probs: (bsz, 2)
         probs = self.generator(cat_res)
 
         return probs
@@ -151,7 +157,7 @@ def train_batch(sample, model, criterion, optim, class_probs, opt):
     # lbl : (bsz)
     probs = model(seq1, seq2)
     # decoder_outputs : (1,bsz,hdim)
-    # probs : (bsz)
+    # probs : (bsz, 2)
 
     loss = criterion(probs, lbl)
     loss.backward()
@@ -371,7 +377,7 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
-    criterion = nn.BCELoss(size_average=True)
+    criterion = nn.NLLLoss()
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
