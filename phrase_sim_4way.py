@@ -53,7 +53,9 @@ class PhraseSim(nn.Module):
         self.avg = Avg()
         self.fourway =FourWay()
         self.generator = nn.Sequential(
-            nn.Linear(4*opt.rnn_size,1),
+            nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
+            nn.ReLU(),
+            nn.Linear(1*opt.rnn_size,1),
             nn.Sigmoid())
 
     def forward(self, seq1, seq2):
@@ -180,6 +182,8 @@ def train(train_iter, val_iter, epoch, model,
     epoch_start = epoch['start']
     epoch_end = epoch['end']
 
+    valid(val_iter,model)
+
     for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
@@ -242,6 +246,15 @@ def dataset_weight(train_iter):
         nneg += sample.lbl.shape[0] - b_npos
 
     return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
+
+def unk_ratio(val_iter,SEQ1):
+    nunk = 0
+    ntotal = 0
+    for sample in val_iter:
+        for seq in [sample.seq1, sample.seq2]:
+            nunk += seq.apply_(lambda x: 1 if x == SEQ1.vocab.stoi['<unk>'] else 0).numpy().sum()
+            ntotal += sample.seq1.shape[0] * sample.seq1.shape[0]
+    print(nunk / ntotal, nunk, ntotal)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
