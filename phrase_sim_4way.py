@@ -383,7 +383,7 @@ if __name__ == '__main__':
         to(device)
     print('Class weights: ', cweights)
     # criterion = nn.CrossEntropyLoss(weight=cweights)
-    criterion = nn.CrossEntropyLoss
+    criterion = nn.CrossEntropyLoss()
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
