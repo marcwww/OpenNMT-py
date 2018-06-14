@@ -169,7 +169,7 @@ def train_batch(sample, model, criterion, optim, class_probs, opt):
 
     return loss.data.item()
 
-def train_batches(samples, model, criterion, optim, class_probs, opt):
+def train_batches(samples, model, criterion, optim):
     model.train()
 
     model.zero_grad()
@@ -181,20 +181,11 @@ def train_batches(samples, model, criterion, optim, class_probs, opt):
 
         seq1 = seq1.to(device)
         seq2 = seq2.to(device)
-        lbl = lbl.type(torch.FloatTensor)
-
-        lbl_smoothed = label_smoothing(lbl, class_probs, opt.label_smoothing).\
-            unsqueeze(1).to(device)
-        # lbl_smoothed : (bsz, 1)
-
-        lbl = lbl.to(device)
-
-        # lbl_smoothed : (bsz, 2)
-        lbl_smoothed = torch.stack([1-lbl_smoothed,lbl_smoothed],dim=1).squeeze(-1)
+        lbl = lbl.type(torch.FloatTensor).to(device)
+        # lbl: (bsz)
         probs = model(seq1, seq2)
         # probs : (bsz, 2)
-        # criterion.weight = class_weight.to(device)
-        loss = criterion(probs, lbl_smoothed)
+        loss = criterion(probs, lbl)
         loss.backward()
         losses.append(loss.data.item())
         # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
@@ -213,7 +204,7 @@ def restore_log(opt):
            history['precs'],history['recalls'],history['f1s']
 
 def train(train_iter, val_iter, epoch, model,
-          optim, criterion, opt, class_probs):
+          optim, criterion, opt):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -239,8 +230,9 @@ def train(train_iter, val_iter, epoch, model,
             samples.append(sample)
 
             if len(samples) == opt.accum_count:
-                loss_val = train_batches(samples,model,criterion,
-                                   optim,class_probs,opt)
+                loss_val = \
+                    train_batches(samples,model,criterion,
+                                   optim)
 
                 losses.append(loss_val)
                 percent = i/len(train_iter)
@@ -379,10 +371,12 @@ if __name__ == '__main__':
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
     # criterion = nn.NLLLoss()
-    criterion = nn.KLDivLoss()
+    class_weight = torch.Tensor([1-class_probs['pneg'],
+                                 1-class_probs['ppos']])
+    criterion = nn.CrossEntropyLoss(weight=class_weight)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt,class_probs)
+          model,optim,criterion,opt)
 
