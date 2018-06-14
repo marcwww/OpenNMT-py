@@ -183,7 +183,8 @@ def train_batches(samples, model, criterion, optim, class_probs, opt):
         seq2 = seq2.to(device)
         lbl = lbl.type(torch.FloatTensor)
 
-        lbl_smoothed = label_smoothing(lbl, class_probs, opt.label_smoothing).unsqueeze(1)
+        lbl_smoothed = label_smoothing(lbl, class_probs, opt.label_smoothing).\
+            unsqueeze(1).to(device)
         # lbl_smoothed : (bsz, 1)
 
         lbl = lbl.to(device)
