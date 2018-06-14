@@ -295,8 +295,9 @@ if __name__ == '__main__':
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
     class_probs = dataset_bias(train_iter)
-    print('Class probs: ',class_probs)
+    print('Class probs: ', class_probs)
     cweights = class_weight(class_probs, opt.label_smoothing)
+    print('Class weights: ', cweights)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
