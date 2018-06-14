@@ -53,16 +53,11 @@ class PhraseSim(nn.Module):
         self.encoder = encoder
         self.avg = Avg()
         self.fourway =FourWay()
-        # self.generator = nn.Sequential(
-        #     nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
-        #     nn.ReLU(),
-        #     nn.Linear(1*opt.rnn_size,1),
-        #     nn.Sigmoid())
         self.generator = nn.Sequential(
             nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
             nn.ReLU(),
-            nn.Linear(1*opt.rnn_size,2),
-            nn.Softmax())
+            nn.Linear(1*opt.rnn_size,1),
+            nn.Sigmoid())
 
     def forward(self, seq1, seq2):
         seq1 = seq1.unsqueeze(2)
@@ -77,7 +72,6 @@ class PhraseSim(nn.Module):
 
         cat_res = self.fourway(mem_avg1,mem_avg2)
 
-        # probs: (bsz, 2)
         probs = self.generator(cat_res)
 
         return probs
@@ -131,11 +125,7 @@ def param_del(param_lst1,param_lst2):
 
     return res
 
-def label_smoothing(lbl, class_probs, e):
-    return lbl.clone()\
-        .apply_(lambda x:(1-e)*x+e*class_probs['ppos' if x==1 else 'pneg'])
-
-def train_batch(sample, model, criterion, optim, class_probs, opt):
+def train_batch(sample, model, criterion, optim, class_weight):
     model.train()
 
     model.zero_grad()
@@ -147,18 +137,17 @@ def train_batch(sample, model, criterion, optim, class_probs, opt):
     seq2 = seq2.to(device)
     lbl = lbl.type(torch.FloatTensor)
 
-    lbl = label_smoothing(lbl, class_probs, opt.label_smoothing)
+    bs_weight = lbl.clone().\
+        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
 
-    # bs_weight = lbl.clone().\
-    #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-    #
-    # criterion.weight = bs_weight.to(device)
+    criterion.weight = bs_weight.to(device)
+
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
     probs = model(seq1, seq2)
     # decoder_outputs : (1,bsz,hdim)
-    # probs : (bsz, 2)
+    # probs : (bsz)
 
     loss = criterion(probs, lbl)
     loss.backward()
@@ -167,34 +156,7 @@ def train_batch(sample, model, criterion, optim, class_probs, opt):
     # clip_grads(model)
     optim.step()
 
-    return loss.data.item()
-
-def train_batches(samples, model, criterion, optim):
-    model.train()
-
-    model.zero_grad()
-    losses=[]
-    for i,sample in enumerate(samples):
-        seq1, seq2, lbl = sample.seq1, \
-                          sample.seq2, \
-                          sample.lbl
-
-        seq1 = seq1.to(device)
-        seq2 = seq2.to(device)
-        # lbl = lbl.type(torch.FloatTensor).to(device)
-        lbl = lbl.to(device)
-        # lbl: (bsz)
-        probs = model(seq1, seq2)
-        # probs : (bsz, 2)
-        loss = criterion(probs, lbl)
-        loss.backward(retain_graph = True if i!= len(samples)-1 else False)
-        losses.append(loss.data.item())
-        # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-        # sum=param_sum(model.parameters())
-        # clip_grads(model)
-    optim.step()
-
-    return np.array(losses).sum()/len(losses)
+    return loss
 
 def restore_log(opt):
     basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
@@ -205,7 +167,7 @@ def restore_log(opt):
            history['precs'],history['recalls'],history['f1s']
 
 def train(train_iter, val_iter, epoch, model,
-          optim, criterion, opt):
+          optim, criterion, opt, class_weight):
     # sum=param_sum(model.parameters())
     losses=[]
     accurs=[]
@@ -223,23 +185,17 @@ def train(train_iter, val_iter, epoch, model,
 
     valid(val_iter,model)
 
-    samples = []
     for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
             nbatch += 1
-            samples.append(sample)
 
-            if len(samples) == opt.accum_count:
-                loss_val = \
-                    train_batches(samples,model,criterion,
-                                   optim)
+            loss = train_batch(sample,model,criterion,optim,class_weight)
 
-                losses.append(loss_val)
-                percent = i/len(train_iter)
-                progress_bar(percent,loss_val,epoch)
-
-                samples = []
+            loss_val = loss.data.item()
+            losses.append(loss_val)
+            percent = i/len(train_iter)
+            progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
@@ -265,17 +221,14 @@ def valid(val_iter, model):
 
             seq1 = seq1.to(device)
             seq2 = seq2.to(device)
-            # lbl = lbl.type(torch.FloatTensor)
+            lbl = lbl.type(torch.FloatTensor)
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
             probs = model(seq1, seq2)
-            # probs : (bsz, 2)
-            # cmp = (probs[:,0]-probs[:,1]).cpu()
-            # cmp.apply_(lambda x:0 if x>0 else 1)
-            decisions = probs.topk(k=1)[1].cpu().squeeze(-1)
-            # pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
-            pred_lst.extend(decisions.numpy())
+            # probs : (bsz)
+            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
@@ -285,7 +238,7 @@ def valid(val_iter, model):
 
     return accurracy, precision, recall, f1
 
-def dataset_weight(train_iter):
+def dataset_bias(train_iter):
     npos = 0
     nneg = 0
     for sample in train_iter:
@@ -293,17 +246,8 @@ def dataset_weight(train_iter):
         npos += b_npos
         nneg += sample.lbl.shape[0] - b_npos
 
-    return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
-
-def class_dist(train_iter):
-    npos = 0
-    nneg = 0
-    for sample in train_iter:
-        b_npos = sample.lbl.numpy().sum()
-        npos += b_npos
-        nneg += sample.lbl.shape[0] - b_npos
-
-    return {'ppos': npos / (npos + nneg), 'pneg': nneg / (npos + nneg)}
+    return {'ppos':npos/(npos+nneg),
+            'pneg':nneg/(npos+nneg)}
 
 def unk_ratio(val_iter,SEQ1):
     nunk = 0
@@ -332,8 +276,9 @@ def init_model(model_opt, model):
 def class_weight(class_probs, e):
     ppos = class_probs['ppos']
     pneg = class_probs['pneg']
-    return torch.Tensor([(1-e)*0.5+e*(1-ppos),
-            (1-e)*0.5+e*(1-pneg)])
+
+    return {'wpos':(1-e)*0.5+e*(1-ppos),
+            'wneg':(1-e)*0.5+e*(1-pneg)}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -349,10 +294,9 @@ if __name__ == '__main__':
     SEQ1, SEQ2,\
     train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
 
-    # class_weight = dataset_weight(train_iter)
-    class_probs = class_dist(train_iter)
-    # print('Class weight: ',class_weight)
-    print('Class distribution: ',class_probs)
+    class_probs = dataset_bias(train_iter)
+    print('Class probs: ',class_probs)
+    cweights = class_weight(class_probs, opt.label_smoothing)
 
     embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
@@ -378,15 +322,9 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
-    # criterion = nn.NLLLoss()
-    cweights = class_weight(class_probs, opt.label_smoothing).\
-        to(device)
-    print('Class weights: ', cweights)
-    # criterion = nn.CrossEntropyLoss(weight=cweights)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCELoss(size_average=True)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
     train(train_iter,val_iter,epoch,
-          model,optim,criterion,opt)
-
+          model,optim,criterion,opt,cweights)
