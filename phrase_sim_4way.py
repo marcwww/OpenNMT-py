@@ -265,7 +265,7 @@ def valid(val_iter, model):
 
             seq1 = seq1.to(device)
             seq2 = seq2.to(device)
-            lbl = lbl.type(torch.FloatTensor)
+            # lbl = lbl.type(torch.FloatTensor)
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
@@ -273,7 +273,7 @@ def valid(val_iter, model):
             # probs : (bsz, 2)
             # cmp = (probs[:,0]-probs[:,1]).cpu()
             # cmp.apply_(lambda x:0 if x>0 else 1)
-            decisions = probs.topk(k=1)[1].cpu()
+            decisions = probs.topk(k=1)[1].cpu().squeeze(-1)
             # pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(decisions.numpy())
             lbl_lst.extend(lbl.numpy())
