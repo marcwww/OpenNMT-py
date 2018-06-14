@@ -174,7 +174,7 @@ def train_batches(samples, model, criterion, optim):
 
     model.zero_grad()
     losses=[]
-    for sample in samples:
+    for i,sample in enumerate(samples):
         seq1, seq2, lbl = sample.seq1, \
                           sample.seq2, \
                           sample.lbl
@@ -187,7 +187,7 @@ def train_batches(samples, model, criterion, optim):
         probs = model(seq1, seq2)
         # probs : (bsz, 2)
         loss = criterion(probs, lbl)
-        loss.backward()
+        loss.backward(retain_graph = True if i!= len(samples)-1 else False)
         losses.append(loss.data.item())
         # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
         # sum=param_sum(model.parameters())
@@ -381,6 +381,7 @@ if __name__ == '__main__':
     # criterion = nn.NLLLoss()
     cweights = class_weight(class_probs, opt.label_smoothing).\
         to(device)
+    print('Class weights: ', cweights)
     criterion = nn.CrossEntropyLoss(weight=cweights)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
