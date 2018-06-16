@@ -23,5 +23,5 @@ def trans_back(zh_text):
 # print(trans_zh('借呗开通需要什么资料'))
 # print(trans_en('What information do you need for opening'))
 
-print(trans_back('花呗系统繁忙'))
+# print(trans_back('花呗系统繁忙'))
 
