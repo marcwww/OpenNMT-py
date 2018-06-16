@@ -14,8 +14,8 @@ UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 
 global HOME
-# HOME=os.path.abspath('.')
-HOME=os.path.abspath('..')
+HOME=os.path.abspath('.')
+# HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
