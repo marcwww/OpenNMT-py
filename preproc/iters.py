@@ -2,14 +2,20 @@ import torchtext
 import os
 import codecs
 import jieba
+from edit_distance import edit_distance
+import numpy as np
+from matplotlib import pyplot as plt
+from sklearn import metrics
+import trans_sogo
+import time
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 
 global HOME
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
@@ -52,14 +58,117 @@ def dataset_weight(train_iter):
 
     return {'wpos': 1 - npos / (npos + nneg), 'wneg': 1 - nneg / (npos + nneg)}
 
+def edistance(train_iter):
+    d_lst_pos = []
+    d_lst_neg = []
+    for sample in train_iter.dataset.examples:
+        seq1, seq2, lbl  = sample.seq1,sample.seq2,sample.lbl
+        d = edit_distance(seq1, seq2)
+        if lbl == '1':
+            d_lst_pos.append(d)
+        else:
+            d_lst_neg.append(d)
+
+    draw_hist(d_lst_pos, 'Pos edistance', 'ed', '#',
+              0, np.array(d_lst_pos).max() + 1, 0, 4000)
+    draw_hist(d_lst_neg, 'Neg edistance', 'ed', '#',
+              0, np.array(d_lst_neg).max() + 1, 0, 4000)
+
+    return np.array(d_lst_pos).mean(), np.array(d_lst_pos).std(), \
+           np.array(d_lst_neg).mean(), np.array(d_lst_neg).std()
+
+def ed_classify(train_iter, threshold):
+    pred_lst=[]
+    true_lst=[]
+    for sample in train_iter.dataset.examples:
+        seq1, seq2, lbl = sample.seq1, sample.seq2, sample.lbl
+        d = edit_distance(seq1, seq2)
+        pred_lst.append(1 if d < threshold else 0)
+        true_lst.append(int(lbl))
+
+    pred_lst = np.array(pred_lst)
+    true_lst = np.array(true_lst)
+    return {'threshold':threshold,
+            'accur': metrics.accuracy_score(true_lst,pred_lst),
+            'precision': metrics.precision_score(true_lst,pred_lst),
+            'recall': metrics.recall_score(true_lst,pred_lst),
+            'f1': metrics.f1_score(true_lst,pred_lst)}
+
+
+
+def draw_hist(data_lst,Title,Xlabel,Ylabel,Xmin,Xmax,Ymin,Ymax):
+    plt.hist(data_lst,100)
+    plt.xlabel(Xlabel)
+    plt.xlim(Xmin,Xmax)
+    plt.xticks(range(Xmin,Xmax+1,2))
+    plt.ylabel(Ylabel)
+    plt.ylim(Ymin,Ymax)
+    plt.title(Title)
+    plt.show()
+
+def data_augm(train_tsv, valid_tsv):
+    with open(os.path.join(DATA,'train_augm'),'w') as f:
+        with open(os.path.join(DATA,train_tsv),'r') as ftrain:
+            lines = ftrain.readlines()
+            for i, line in enumerate(lines):
+                done = False
+
+                while not done:
+                    try:
+                        seq1, seq2, lbl = line.split('\t')
+                        seq1_trans, seq2_trans = trans_sogo.trans_back(seq1), \
+                                                 trans_sogo.trans_back(seq2)
+                        f.write(seq1_trans+'\t'+seq2_trans+'\t'+lbl)
+
+                        done = True
+
+                        percent = i / len(lines)
+                        fill = int(percent * 40)
+                        print("\r[{}{}]: {:.4f} (train)".format("=" * fill, " " * (40 - fill), percent), end='')
+
+                    except:
+                        print("\r[{}{}]: {:.4f} (train) error".format("=" * fill, " " * (40 - fill), percent), end='')
+                        time.sleep(5)
+
+
+    print('\n')
+
+    with open(os.path.join(DATA,'valid_augm'),'w') as f:
+        with open(os.path.join(DATA,valid_tsv),'r') as fvalid:
+            lines = fvalid.readlines()
+            for i, line in enumerate(lines):
+
+                done = False
+
+                while not done:
+                    try:
+
+                        seq1, seq2, lbl = line.split('\t')
+                        seq1_trans, seq2_trans = trans_sogo.trans_back(seq1), \
+                                                 trans_sogo.trans_back(seq2)
+                        f.write(seq1_trans+'\t'+seq2_trans+'\t'+lbl)
+
+                        percent = i / len(lines)
+                        fill = int(percent * 40)
+                        print("\r[{}{}]: {:.4f} (valid)".format("=" * fill, " " * (40 - fill), percent), end='')
+
+                    except:
+                        print("\r[{}{}]: {:.4f} (valid) error".format("=" * fill, " " * (40 - fill), percent), end='')
+                        time.sleep(5)
+
 if __name__ == '__main__':
-    SEQ1, SEQ2, \
-    train_iter, val_iter = build_iters(bsz=4)
+    # SEQ1, SEQ2, \
+    # train_iter, val_iter = build_iters(bsz=4)
 
-    print(dataset_weight(train_iter))
+    # print(dataset_weight(train_iter))
+    #
+    # print(edistance(train_iter))
+    #
+    # for threshold in range(1,15):
+    #     print(ed_classify(train_iter,threshold))
 
+    data_augm('train.tsv','valid.tsv')
 
-#
 #
 # train_iter, val_iter, test_iter = data.Iterator.splits(
 #     (train, val, test), batch_sizes=(2,1,1),
