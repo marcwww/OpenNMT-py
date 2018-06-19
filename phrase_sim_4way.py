@@ -136,12 +136,11 @@ def train_batch(sample, model, criterion, optim, class_weight):
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
     lbl = lbl.type(torch.FloatTensor)
-    # lbl = lbl.type(torch.LongTensor)
 
-    # bs_weight = lbl.clone().\
-    #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-    #
-    # criterion.weight = bs_weight.to(device)
+    bs_weight = lbl.clone().\
+        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+
+    criterion.weight = bs_weight.to(device)
 
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
@@ -149,7 +148,6 @@ def train_batch(sample, model, criterion, optim, class_weight):
     probs = model(seq1, seq2)
     # decoder_outputs : (1,bsz,hdim)
     # probs : (bsz)
-    probs = probs.squeeze(-1)
 
     loss = criterion(probs, lbl)
     loss.backward()
@@ -199,11 +197,9 @@ def train(train_iter, val_iter, epoch, model,
             percent = i/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
-        for threshold in [0.5,0.6,0.7,0.8,0.9]:
-            accurracy, precision, recall, f1 = valid(val_iter,model,threshold)
-            print("Valid[threshold:%f]: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
-                  (threshold, accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
-
+        accurracy, precision, recall, f1 = valid(val_iter,model)
+        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
+              (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
         accurs.extend([accurracy for _ in range(nbatch)])
         precs.extend([precision for _ in range(nbatch)])
         recalls.extend([recall for _ in range(nbatch)])
@@ -327,9 +323,7 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model,opt,None)
-    # criterion = nn.BCELoss(size_average=True)
-    # criterion = nn.MultiMarginLoss(weight=torch.Tensor([cweights['wneg'],cweights['wpos']]))
-    criterion = nn.SoftMarginLoss()
+    criterion = nn.BCELoss(size_average=True)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
