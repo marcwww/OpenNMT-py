@@ -1,3 +1,4 @@
+# coding:utf-8
 def edit_distance(s1, s2):
     m=len(s1)+1
     n=len(s2)+1
@@ -13,4 +14,4 @@ def edit_distance(s1, s2):
     return tbl[i,j]
 
 if __name__ == '__main__':
-    print(edit_distance("蚂蚁 借呗 一共 能 借 多少 钱".split(), "我 一共 借 了 花呗 多少 钱".split()))
+    print(edit_distance(u"蚂蚁 借呗 一共 能 借 多少 钱".split(), u"我 一共 借 了 花呗 多少 钱".split()))

@@ -1,3 +1,4 @@
+# coding:utf-8
 from sogou_translate import SogouTranslate, SogouLanguages
 
 translator = SogouTranslate('5328612ac485498d8c6b0a5e666126ef',
@@ -18,10 +19,10 @@ def trans_zh(zh_text):
 def trans_back(zh_text):
     return trans_en(trans_zh(zh_text))
 
-# print(trans_zh('就是我花呗忘记还款了。逾期一天。有事吗'))
-# print(trans_back('借呗开通需要什么资料'))
-# print(trans_zh('借呗开通需要什么资料'))
+# print(trans_zh(u'就是我花呗忘记还款了。逾期一天。有事吗'))
+# print(trans_back(u'借呗开通需要什么资料'))
+# print(trans_zh(u'借呗开通需要什么资料'))
 # print(trans_en('What information do you need for opening'))
 
-# print(trans_back('花呗系统繁忙'))
+# print(trans_back(u'花呗系统繁忙'))
 

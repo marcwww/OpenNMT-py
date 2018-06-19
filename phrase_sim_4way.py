@@ -208,7 +208,7 @@ def train(train_iter, val_iter, epoch, model,
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
-def valid(val_iter, model):
+def valid(val_iter, model, threshold=0.8):
     model.eval()
 
     pred_lst = []
@@ -227,7 +227,7 @@ def valid(val_iter, model):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            pred = probs.cpu().apply_(lambda x: 0 if x < threshold else 1)
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
