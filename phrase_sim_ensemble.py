@@ -232,8 +232,7 @@ def valid(val_iter, models):
                 pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
                 votes += pred
 
-            votes/=4
-            votes.apply_(lambda x: 0 if x < 0.5 else 1)
+            votes.apply_(lambda x: 0 if x/4 < 0.5 else 1)
             pred_lst.extend(np.array(votes))
             lbl_lst.extend(lbl.cpu().numpy())
 
