@@ -235,7 +235,7 @@ def valid(val_iter, models):
             votes/=4
             votes.apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(np.array(votes))
-            lbl_lst.extend(lbl.numpy())
+            lbl_lst.extend(lbl.cpu().numpy())
 
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
