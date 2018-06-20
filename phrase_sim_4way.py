@@ -197,7 +197,7 @@ def train(train_iter, val_iter, epoch, model,
             percent = i/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
-        for thres in [0.1* i for i in range(5,10)]:
+        for thres in [0.5, 0.6, 0.7, 0.8, 0.9]:
             accurracy, precision, recall, f1 = valid(val_iter,model,thres)
             print("Valid[threshold:%f]: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
                   (thres, accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
