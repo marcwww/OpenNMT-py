@@ -292,7 +292,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     SEQ1, SEQ2,\
-    train_iter, val_iter = iters.build_iters(bsz=opt.batch_size)
+    train_iter, val_iter = iters.build_iters(ftrain='train0.tsv',bsz=opt.batch_size)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
