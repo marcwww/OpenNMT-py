@@ -224,17 +224,22 @@ def valid(val_iter, models):
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
-            votes = torch.zeros(lbl.shape[0])
+            votes = np.zeros(lbl.shape[0])
             for model_idx in range(len(models)):
                 model=models[model_idx]
                 probs = model(seq1, seq2)
                 # probs : (bsz)
                 pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
-                votes += pred
+                votes += pred.numpy()
 
-            votes.apply_(lambda x: 0 if x/4 < 0.5 else 1)
-            pred_lst.extend(np.array(votes))
-            lbl_lst.extend(lbl.cpu().numpy())
+            votes/=4
+            for i in range(lbl.shape[0]):
+                if votes[i]<0.5:
+                    votes[i]=0
+                else:
+                    votes[i]=1
+            pred_lst.extend(votes)
+            lbl_lst.extend(lbl.numpy())
 
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
