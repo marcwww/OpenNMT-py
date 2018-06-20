@@ -178,7 +178,7 @@ def train(train_iter, val_iter, epoch, model,
     if opt.load_idx != -1:
         losses,accurs,\
         precs,recalls,\
-        f1s=restore_log(opt.load_idx)
+        f1s=restore_log(opt)
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
