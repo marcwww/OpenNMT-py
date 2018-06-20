@@ -3,19 +3,23 @@ import codecs
 import random
 
 HOME=os.path.abspath('..')
-data=os.path.join(HOME,'data')
+DATA=os.path.join(HOME,'data')
 
-def split(data_csv,ratio=0.7):
-    lines=codecs.open(data_csv,'r',encoding='utf8').readlines()
+def split(data,data_sets,ratio=0.8):
+    lines=[]
+    for data_set in data_sets:
+        lines.extend(codecs.open(os.path.join(data,data_set),'r',encoding='utf8').readlines())
+
     num=len(lines)
     train_num=int(ratio*num)
     with open(os.path.join(data,'train.tsv'),'w') as f_train:
         with open(os.path.join(data,'valid.tsv'),'w') as f_test:
             for i in random.sample(list(range(num)),k=num):
+                line = '\t'.join(lines[i].split('\t')[1:])
                 if i<train_num:
-                    f_train.write(lines[i])
+                    f_train.write(line)
                 else:
-                    f_test.write(lines[i])
+                    f_test.write(line)
 
 if __name__=='__main__':
-    split(os.path.join(data,'atec_nlp_sim_train.csv'))
+    split(DATA,['atec_nlp_sim_train.csv','atec_nlp_sim_train_add.csv'])

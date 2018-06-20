@@ -197,10 +197,9 @@ def train(train_iter, val_iter, epoch, model,
             percent = i/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
-        for thres in [0.5, 0.6, 0.7, 0.8, 0.9]:
-            accurracy, precision, recall, f1 = valid(val_iter,model,thres)
-            print("Valid[threshold:%f]: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
-                  (thres, accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
+        accurracy, precision, recall, f1 = valid(val_iter,model)
+        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
+              (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
         accurs.extend([accurracy for _ in range(nbatch)])
         precs.extend([precision for _ in range(nbatch)])
         recalls.extend([recall for _ in range(nbatch)])
@@ -209,7 +208,7 @@ def train(train_iter, val_iter, epoch, model,
         if (epoch+1) % SAVE_PER == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
-def valid(val_iter, model, threshold=0.8):
+def valid(val_iter, model):
     model.eval()
 
     pred_lst = []
@@ -228,7 +227,7 @@ def valid(val_iter, model, threshold=0.8):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.cpu().apply_(lambda x: 0 if x < threshold else 1)
+            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
