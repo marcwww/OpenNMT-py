@@ -178,23 +178,21 @@ def train(train_iters, val_iter, epoch, models,
     epoch_end = epoch['end']
 
     for epoch in range(epoch_start,epoch_end):
-        nbatch = None
         losses_lst=[[] for _ in range(len(models))]
         for model_idx in range(len(models)):
             model = models[model_idx]
             train_iter = train_iters[model_idx]
             optim = optims[model_idx]
             losses = losses_lst[model_idx]
-            nbatch = 0
             for i, sample in enumerate(train_iter):
-                nbatch += 1
                 loss = train_batch(sample,model,criterion,optim)
                 loss_val = loss.data.item()
                 losses.append(loss_val)
                 percent = i/len(train_iter)
                 progress_bar(percent,loss_val,epoch)
+        nbatch = len(train_iters[0])
 
-        losses.extend(np.array(losses_lst).mean(axis=0))
+        losses.extend(list(np.array([loss[:nbatch] for loss in losses_lst]).mean(axis=0)))
         accurracy, precision, recall, f1 = valid(val_iter,models)
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
               (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
