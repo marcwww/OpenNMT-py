@@ -1,6 +1,6 @@
 import argparse
 import onmt.opts as opts
-from preproc import iters
+from preproc import iters_ensemble
 from onmt import model_builder
 from onmt.utils import optimizers
 from itertools import count
@@ -230,7 +230,7 @@ def valid(val_iter, models):
                 probs = model(seq1, seq2)
                 # probs : (bsz)
                 pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
-                votes += pred.numpy()
+                votes += pred.squeeze(-1).numpy()
 
             votes/=4
             for i in range(lbl.shape[0]):
@@ -320,12 +320,14 @@ if __name__ == '__main__':
 
     models=[]
     train_iters=[]
-    val_iter=None
     optims=[]
+    TEXT, train_iters, valid_iter = \
+            iters_ensemble.\
+            build_iters(ftrains=['train%d.tsv' % (i) for i in range(4)],
+                        bsz=opt.batch_size)
+
     for i in range(4):
-        SEQL,_,train_iter,val_iter = iters.build_iters(ftrain='train%d.tsv' % (i), bsz=opt.batch_size)
-        train_iters.append(train_iter)
-        embeddings_enc = model_builder.build_embeddings(opt, SEQL.vocab, [])
+        embeddings_enc = model_builder.build_embeddings(opt, TEXT.vocab, [])
         encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                           opt.dropout, embeddings_enc)
         model = PhraseSim(encoder, opt).to(device)
@@ -347,5 +349,5 @@ if __name__ == '__main__':
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
-    train(train_iters, val_iter, epoch, models,
+    train(train_iters, valid_iter, epoch, models,
           optims, criterion, opt)

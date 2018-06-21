@@ -97,7 +97,7 @@ class TransformerEncoder(EncoderBase):
         aeq(out_len, w_len)
         # END CHECKS
 
-        # Make mask.
+        # Make mask.i
         padding_idx = self.embeddings.word_padding_idx
         mask = words.data.eq(padding_idx).unsqueeze(1) \
             .expand(w_batch, w_len, w_len)

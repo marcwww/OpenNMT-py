@@ -30,6 +30,9 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
     SEQ2 = torchtext.data.Field(sequential=True, tokenize=tokenizer,
                                 pad_token=PAD_WORD, unk_token=UNK_WORD)
     LBL = torchtext.data.Field(sequential=False, use_vocab=False)
+
+
+
     train, valid = torchtext.data.\
         TabularDataset.\
         splits(path=DATA, train=ftrain,
