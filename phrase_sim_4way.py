@@ -77,11 +77,11 @@ def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
     print("\r[{}{}]: {:.4f}/epoch {:d} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), percent, epoch, last_loss), end='')
+        "=" * fill, " " * (40 - fill), percent, epoch, last_loss))
 
 def progress_clean():
     """Clean the progress bar."""
-    print("\r{}".format(" " * 80), end='')
+    print("\r{}".format(" " * 80))
 
 def save_checkpoint(model, epoch,
                     losses, accurs,
