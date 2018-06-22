@@ -12,7 +12,6 @@
 from __future__ import division
 from __future__ import print_function
 
-import onmt.inputters as inputters
 import onmt.utils
 
 

@@ -10,7 +10,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 import onmt
-import onmt.inputters as inputters
 
 
 def build_loss_compute(model, tgt_vocab, opt, train=True):

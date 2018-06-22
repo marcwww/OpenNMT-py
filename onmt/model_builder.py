@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
 
-import onmt.inputters as inputters
+from preproc.iters import PAD_WORD
 import onmt.modules
 from onmt.encoders.transformer import TransformerEncoder
 from onmt.modules import Embeddings, CopyGenerator
@@ -29,10 +29,10 @@ def build_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     else:
         embedding_dim = opt.tgt_word_vec_size
 
-    word_padding_idx = word_dict.stoi[inputters.PAD_WORD]
+    word_padding_idx = word_dict.stoi[PAD_WORD]
     num_word_embeddings = len(word_dict)
 
-    feats_padding_idx = [feat_dict.stoi[inputters.PAD_WORD]
+    feats_padding_idx = [feat_dict.stoi[PAD_WORD]
                          for feat_dict in feature_dicts]
     num_feat_embeddings = [len(feat_dict) for feat_dict in
                            feature_dicts]
