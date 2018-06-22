@@ -48,21 +48,6 @@ def model_opts(parser):
 
     # Encoder-Deocder Options
     group = parser.add_argument_group('Model- Encoder-Decoder')
-    group.add_argument('-model_type', default='text',
-                       help="""Type of source model to use. Allows
-                       the system to incorporate non-text inputs.
-                       Options are [text|img|audio].""")
-
-    group.add_argument('-encoder_type', type=str, default='transformer',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
-                       help="""Type of encoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn].""")
-    group.add_argument('-decoder_type', type=str, default='transformer',
-                       choices=['rnn', 'transformer', 'cnn'],
-                       help="""Type of decoder layer to use. Non-RNN layers
-                       are experimental. Options are
-                       [rnn|transformer|cnn].""")
 
     group.add_argument('-layers', type=int, default=-1,
                        help='Number of layers in enc/dec.')

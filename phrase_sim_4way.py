@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 import onmt.opts as opts
 from preproc import iters
@@ -12,6 +13,7 @@ import logging
 from sklearn import metrics
 import json
 from torch.nn.init import xavier_uniform_
+
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -75,11 +77,11 @@ def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
     print("\r[{}{}]: {:.4f}/epoch {:d} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), percent, epoch, last_loss))
+        "=" * fill, " " * (40 - fill), percent, epoch, last_loss), end='')
 
 def progress_clean():
     """Clean the progress bar."""
-    print("\r{}".format(" " * 80))
+    print("\r{}".format(" " * 80), end='')
 
 def save_checkpoint(model, epoch,
                     losses, accurs,
