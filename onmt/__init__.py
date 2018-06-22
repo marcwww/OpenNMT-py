@@ -3,14 +3,13 @@ from __future__ import division, print_function
 
 import onmt.inputters
 import onmt.encoders
-import onmt.decoders
 import onmt.models
 import onmt.utils
 import onmt.modules
 from onmt.trainer import Trainer
 
 # For Flake
-__all__ = [onmt.inputters, onmt.encoders, onmt.decoders, onmt.models,
+__all__ = [onmt.inputters, onmt.encoders, onmt.models,
            onmt.utils, onmt.modules, "Trainer"]
 
 __version__ = "0.4.0"

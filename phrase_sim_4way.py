@@ -3,17 +3,12 @@ import onmt.opts as opts
 from preproc import iters
 from onmt import model_builder
 from onmt.utils import optimizers
-from itertools import count
 from onmt.encoders import transformer as enc
-from onmt.decoders import transformer_ps as dec
 from torch import nn
 import torch
-from preproc.iters import BOS_WORD
 import crash_on_ipy
 import numpy as np
 import logging
-import json
-from torch import optim
 from sklearn import metrics
 import json
 from torch.nn.init import xavier_uniform_
@@ -80,11 +75,11 @@ def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
     print("\r[{}{}]: {:.4f}/epoch {:d} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), percent, epoch, last_loss), end='')
+        "=" * fill, " " * (40 - fill), percent, epoch, last_loss))
 
 def progress_clean():
     """Clean the progress bar."""
-    print("\r{}".format(" " * 80), end='\r')
+    print("\r{}".format(" " * 80))
 
 def save_checkpoint(model, epoch,
                     losses, accurs,
@@ -292,7 +287,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     SEQ1, SEQ2,\
-    train_iter, val_iter = iters.build_iters(ftrain='train0.tsv',bsz=opt.batch_size)
+    train_iter, val_iter = iters.build_iters(ftrain='train.tsv',bsz=opt.batch_size)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)

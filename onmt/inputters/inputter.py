@@ -12,9 +12,6 @@ import torchtext.vocab
 
 from onmt.inputters.dataset_base import UNK_WORD, PAD_WORD, BOS_WORD, EOS_WORD
 from onmt.inputters.text_dataset import TextDataset
-from onmt.inputters.image_dataset import ImageDataset
-from onmt.inputters.audio_dataset import AudioDataset
-
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
