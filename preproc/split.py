@@ -1,9 +1,10 @@
+# coding:utf-8
 import os
 import codecs
 import random
 
 HOME=os.path.abspath('..')
-DATA=os.path.join(HOME,'data')
+DATA=os.path.join(HOME,'data_folder')
 
 def split(data,data_sets,ratio=0.8):
     lines=[]
@@ -17,9 +18,9 @@ def split(data,data_sets,ratio=0.8):
             for i in random.sample(list(range(num)),k=num):
                 line = '\t'.join(lines[i].split('\t')[1:])
                 if i<train_num:
-                    f_train.write(line)
+                    f_train.write(line.encode('utf-8'))
                 else:
-                    f_test.write(line)
+                    f_test.write(line.encode('utf-8'))
 
 if __name__=='__main__':
     split(DATA,['atec_nlp_sim_train.csv','atec_nlp_sim_train_add.csv'])
