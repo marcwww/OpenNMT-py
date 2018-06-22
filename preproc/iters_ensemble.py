@@ -18,7 +18,7 @@ BOS_WORD = '<s>'
 global HOME
 HOME=os.path.abspath('.')
 # HOME=os.path.abspath('..')
-DATA=os.path.join(HOME,'data')
+DATA=os.path.join(HOME,'data_folder')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
 
