@@ -77,11 +77,11 @@ def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
     fill = int(percent * 40)
     print("\r[{}{}]: {:.4f}/epoch {:d} (Loss: {:.4f})".format(
-        "=" * fill, " " * (40 - fill), percent, epoch, last_loss))
+        "=" * fill, " " * (40 - fill), percent, epoch, last_loss), end='')
 
 def progress_clean():
     """Clean the progress bar."""
-    print("\r{}".format(" " * 80))
+    print("\r{}".format(" " * 80), end='')
 
 def save_checkpoint(model, epoch,
                     losses, accurs,
@@ -191,7 +191,7 @@ def train(train_iter, val_iter, epoch, model,
 
             loss_val = loss.data.item()
             losses.append(loss_val)
-            percent = i/len(train_iter)
+            percent = (i+.0)/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
@@ -243,8 +243,8 @@ def dataset_bias(train_iter):
         npos += b_npos
         nneg += sample.lbl.shape[0] - b_npos
 
-    return {'ppos':npos/(npos+nneg),
-            'pneg':nneg/(npos+nneg)}
+    return {'ppos':npos/(npos+nneg+.0),
+            'pneg':nneg/(npos+nneg+.0)}
 
 def unk_ratio(val_iter,SEQ1):
     nunk = 0
