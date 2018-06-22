@@ -4,6 +4,8 @@ import codecs
 import jieba
 from edit_distance import edit_distance
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from sklearn import metrics
 # import trans_sogo
