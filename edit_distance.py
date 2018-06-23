@@ -2,7 +2,8 @@
 def edit_distance(s1, s2):
     m=len(s1)+1
     n=len(s2)+1
-
+    i=None
+    j=None
     tbl = {}
     for i in range(m): tbl[i,0]=i
     for j in range(n): tbl[0,j]=j

@@ -288,15 +288,15 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    SEQ1, SEQ2,\
-    train_iter, val_iter = iters.build_iters(ftrain='train.tsv',bsz=opt.batch_size)
+    TEXT, train_iter, valid_iter = \
+        iters.build_iters(ftrain='train.tsv',bsz=opt.batch_size)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
     cweights = class_weight(class_probs, opt.label_smoothing)
     print('Class weights: ', cweights)
 
-    embeddings_enc = model_builder.build_embeddings(opt, SEQ1.vocab, [])
+    embeddings_enc = model_builder.build_embeddings(opt, TEXT.vocab, [])
     encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
                                   opt.dropout, embeddings_enc)
 
@@ -307,7 +307,6 @@ if __name__ == '__main__':
     print('Param sum before init: ', param_sum(model.parameters()))
     init_model(opt, model)
     print('Param sum after init: ', param_sum(model.parameters()))
-
 
     # print(model.state_dict())
     if opt.load_idx != -1:
@@ -324,5 +323,5 @@ if __name__ == '__main__':
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
-    train(train_iter,val_iter,epoch,
+    train(train_iter,valid_iter,epoch,
           model,optim,criterion,opt,cweights)

@@ -15,8 +15,6 @@ def model_opts(parser):
     group = parser.add_argument_group('Model-Embeddings')
     group.add_argument('-src_word_vec_size', type=int, default=400,
                        help='Word embedding size for src.')
-    group.add_argument('-tgt_word_vec_size', type=int, default=400,
-                       help='Word embedding size for tgt.')
     group.add_argument('-word_vec_size', type=int, default=-1,
                        help='Word embedding size for src and tgt.')
 
