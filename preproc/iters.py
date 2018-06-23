@@ -53,7 +53,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
                                sort=False, repeat=False)
 
 
-    return TEXT, train_iter, valid_iter
+    return TEXT, LABEL, train_iter, valid_iter
 
 if __name__ == '__main__':
     print('')
