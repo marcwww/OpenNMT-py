@@ -178,14 +178,16 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     bsz = probs.shape[0]
     preds = np.zeros(bsz)
+    log_prob_sum = 0
     for i in range(bsz):
         if probs[i]>0.5:
             preds[i] = 1
+            log_prob_sum += torch.log(probs[i])
         else:
-            probs[i] = 1-probs[i]
+            log_prob_sum = torch.log(1-probs[i])
             preds[i] = 0
 
-    log_probs = torch.log(probs)
+    # log_probs = torch.log(probs)
 
     # # decoder_outputs : (1,bsz,hdim)
     # # probs : (bsz)
@@ -197,7 +199,7 @@ def train_batch(sample, model, criterion, optim, class_weight):
     # # clip_grads(model)
     # optim.step()
 
-    return log_probs, preds, loss, lbl.cpu().numpy()
+    return log_prob_sum, preds, loss, lbl.cpu().numpy()
 
 def restore_log(opt):
     basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
@@ -231,15 +233,16 @@ def train(train_iter, val_iter, epoch, model,
         model.train()
         
         # begin 'MC search'
-        log_probs_sum = 0
         pred_lst = []
         lbl_lst = []
         model.zero_grad()
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            log_probs, preds, loss, lbls = train_batch(sample,model,criterion,optim,class_weight)
-            log_probs_sum += log_probs.sum()
+            log_probs_sum, preds, loss, lbls = \
+                train_batch(sample,model,criterion,optim,class_weight)
+            log_probs_sum.backward()
+            # log_probs.sum().backward()
             pred_lst.extend(preds)
             lbl_lst.extend(lbls)
 
@@ -248,13 +251,15 @@ def train(train_iter, val_iter, epoch, model,
             percent = (i+.0)/len(train_iter)
             progress_bar(percent,loss_val,epoch)
 
-            if CUDA_AVAL:
-                torch.cuda.empty_cache()
+            # if CUDA_AVAL:
+            #     torch.cuda.empty_cache()
 
         # end 'MC seach', collect logPi's
         Q = metrics.f1_score(lbl_lst, pred_lst)
-        J = log_probs_sum * Q
-        J.backward() # policy gradient
+        for param in model.parameters():
+            param.grad *= Q/len(lbl_lst) # policy gradient
+        # J = log_probs_sum * Q
+        # J.backward() # policy gradient
         optim.step()
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
