@@ -241,7 +241,7 @@ def train(train_iter, val_iter, epoch, model,
 
             log_probs_sum, preds, loss, lbls = \
                 train_batch(sample,model,criterion,optim,class_weight)
-            log_probs_sum.backward()
+            (-log_probs_sum).backward()
             # log_probs.sum().backward()
             pred_lst.extend(preds)
             lbl_lst.extend(lbls)
