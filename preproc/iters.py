@@ -8,8 +8,8 @@ PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 
-# HOME=os.path.abspath('.')
-HOME=os.path.abspath('..')
+HOME=os.path.abspath('.')
+# HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
