@@ -1,15 +1,7 @@
 import torchtext
 import os
-import codecs
 import jieba
-from edit_distance import edit_distance
-import numpy as np
-import matplotlib
-matplotlib.use('TkAgg')
-from sklearn import metrics
-# import trans_sogo
-# import google
-import time
+
 from torchtext import data
 
 PAD_WORD = '<blank>'
@@ -22,11 +14,15 @@ DATA=os.path.join(HOME,'data_folder')
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
 
-def tokenizer(txt):
+def tokenizer_word(txt):
     return list(jieba.cut(txt))
 
-def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64):
-    TEXT = torchtext.data.Field(sequential=True, tokenize=tokenizer,
+def tokenizer_char(txt):
+    return list(txt)
+
+def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
+    TEXT = torchtext.data.Field(sequential=True,
+                                tokenize=tokenizer_word if level == 'word' else 'char',
                                 pad_token=PAD_WORD, unk_token=UNK_WORD)
     LABEL = torchtext.data.Field(sequential=False, use_vocab=False)
 

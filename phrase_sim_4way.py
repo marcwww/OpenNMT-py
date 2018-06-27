@@ -228,6 +228,8 @@ def valid(val_iter, model):
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
+            print((i+0.0)/len(val_iter))
+
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
     recall =metrics.recall_score(np.array(lbl_lst),np.array(pred_lst))
@@ -323,5 +325,6 @@ if __name__ == '__main__':
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
              'end':10000}
 
-    train(train_iter,valid_iter,epoch,
-          model,optim,criterion,opt,cweights)
+    print(valid(train_iter,model))
+    # train(train_iter,valid_iter,epoch,
+    #       model,optim,criterion,opt,cweights)

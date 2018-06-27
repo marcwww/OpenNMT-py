@@ -1,15 +1,8 @@
 import torchtext
 from torchtext import data
 import os
-import codecs
 import jieba
-from edit_distance import edit_distance
-import numpy as np
-from matplotlib import pyplot as plt
-from sklearn import metrics
-# import trans_sogo
-# import google
-import time
+
 
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
