@@ -15,6 +15,7 @@ import json
 from torch.nn import functional as F
 from torch.nn.init import xavier_uniform_
 
+CUDA_AVAL = torch.cuda.is_available()
 
 LOGGER = logging.getLogger(__name__)
 SAVE_PER = 10
@@ -246,6 +247,9 @@ def train(train_iter, val_iter, epoch, model,
             losses.append(loss_val)
             percent = (i+.0)/len(train_iter)
             progress_bar(percent,loss_val,epoch)
+
+            if CUDA_AVAL:
+                torch.cuda().empty()
 
         # end 'MC seach', collect logPi's
         Q = metrics.f1_score(lbl_lst, pred_lst)
