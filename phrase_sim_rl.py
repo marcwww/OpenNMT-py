@@ -249,7 +249,7 @@ def train(train_iter, val_iter, epoch, model,
             progress_bar(percent,loss_val,epoch)
 
             if CUDA_AVAL:
-                torch.cuda().empty()
+                torch.cuda.empty_cache()
 
         # end 'MC seach', collect logPi's
         Q = metrics.f1_score(lbl_lst, pred_lst)
