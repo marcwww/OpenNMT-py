@@ -145,8 +145,8 @@ class NegF1(nn.Module):
                 assert probs[i] <= 0.5 and lbls[i] == 0
                 TN += 1-probs[i]
 
-        precision = TP/(TP+FP)
-        recall = TP/(TP+FN)
+        precision = (TP+1e-5)/(TP+FP+1e-5)
+        recall = (TP+1e-5)/(TP+FN+1e-5)
         f1 = 2*precision*recall/(precision+recall)
 
         return -f1
