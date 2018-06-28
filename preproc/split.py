@@ -6,7 +6,7 @@ import random
 HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 
-def split(data,data_sets,ratio=0.8):
+def split(data,data_sets,ratio=0.9):
     lines=[]
     for data_set in data_sets:
         lines.extend(codecs.open(os.path.join(data,data_set),'r',encoding='utf8').readlines())
