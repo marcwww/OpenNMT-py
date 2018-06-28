@@ -1,3 +1,4 @@
+#coding:utf-8
 import argparse
 import onmt.opts as opts
 from preproc import iters
@@ -13,6 +14,8 @@ from torchtext import data
 import torchtext
 import os
 from preproc.iters import PAD_WORD
+import codecs
+import chardet
 
 def to_valid(val_iter, model):
     model.eval()
@@ -22,7 +25,9 @@ def to_valid(val_iter, model):
     with torch.no_grad():
         for i, sample in enumerate(val_iter):
             index, seq1, seq2 = sample.index, sample.seq1,\
-                              sample.seq2\
+                              sample.seq2
+            # print(index, seq1, seq2)
+            print((i+.0)/len(valid_iter))
 
             seq1 = seq1.to(device)
             seq2 = seq2.to(device)
@@ -36,6 +41,19 @@ def to_valid(val_iter, model):
             index_lst.extend(index.numpy())
 
     return index_lst, pred_lst
+
+def change_file_encoding(f):
+    with open(f, 'r') as f_in:
+        with open(f+'.re-encoded', 'w') as f_out:
+            f_cnt = f_in.read()
+            enc_in = chardet.detect(f_cnt)
+            f_cnt_renc = f_cnt.decode(enc_in['encoding']).encode('utf-8')
+            f_out.write(f_cnt_renc)
+
+    # with codecs.open(f,'r',encoding='utf-8') as f_in:
+    #     with codecs.open(f+'.re-encoded','w',encoding='utf-8') as f_out:
+    #         f_out.writelines(f_in.readlines())
+    return f+'.re-encoded'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -51,9 +69,11 @@ if __name__ == '__main__':
     INDEX = torchtext.data.Field(sequential=False, use_vocab=False)
 
     TEXT, LABEL, train_iter, valid_iter = \
-        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size)
+        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size, level='char')
 
-    valid = data.TabularDataset(path=opt.fvalid, format='tsv',
+    fvalid = change_file_encoding(opt.fvalid)
+
+    valid = data.TabularDataset(path=fvalid, format='tsv',
                                 fields=[
                                     ('index', INDEX),
                                     ('seq1', TEXT),
