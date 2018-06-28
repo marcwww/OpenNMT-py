@@ -4,11 +4,15 @@ from preproc import iters
 from onmt import model_builder
 from onmt.encoders import transformer as enc
 import torch
-from phrase_sim_4way import PhraseSim
-from phrase_sim_4way import init_model
+# from phrase_sim_4way import PhraseSim
+# from phrase_sim_4way import init_model
+from phrase_sim_gru import PhraseSim
+from phrase_sim_gru import Encoder
+from phrase_sim_gru import init_model
 from torchtext import data
 import torchtext
 import os
+from preproc.iters import PAD_WORD
 
 def to_valid(val_iter, model):
     model.eval()
@@ -66,7 +70,12 @@ if __name__ == '__main__':
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
 
-    model = PhraseSim(encoder, opt).to(device)
+    encoder = Encoder(len(TEXT.vocab.stoi),
+                      opt.rnn_size,
+                      TEXT.vocab.stoi[PAD_WORD],
+                      opt.enc_layers,
+                      opt.dropout)
+    model = PhraseSim(encoder).to(device)
     init_model(opt, model)
 
     if opt.load_idx != -1:

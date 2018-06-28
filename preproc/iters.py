@@ -7,6 +7,7 @@ from torchtext import data
 PAD_WORD = '<blank>'
 UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
+SEG_WORD = '<seg>'
 
 HOME=os.path.abspath('.')
 # HOME=os.path.abspath('..')
@@ -20,9 +21,20 @@ def tokenizer_word(txt):
 def tokenizer_char(txt):
     return list(txt)
 
-def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
+def tokenizer_charNword(txt):
+    return list(txt) + SEG_WORD + list(jieba.cut(txt))
+
+def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='charNword'):
+
+    if level == 'word':
+        tokenizer = tokenizer_word
+    elif level == 'char':
+        tokenizer = tokenizer_char
+    else:
+        tokenizer = tokenizer_charNword
+
     TEXT = torchtext.data.Field(sequential=True,
-                                tokenize=tokenizer_word if level == 'word' else tokenizer_char,
+                                tokenize=tokenizer,
                                 pad_token=PAD_WORD, unk_token=UNK_WORD)
     LABEL = torchtext.data.Field(sequential=False, use_vocab=False)
 
