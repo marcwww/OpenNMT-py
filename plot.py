@@ -10,7 +10,7 @@ import crash_on_ipy
 # sys.path.append(os.path.abspath(os.getcwd() + "./../"))
 
 # files = glob("./repeat-copy/*-{}.json".format(batch_num))
-name='demo-epoch-1709'
+name='demo-epoch-239'
 
 fname = "./"+ name +'.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
@@ -58,7 +58,7 @@ plt.errorbar(x, f1_mean, fmt='x-', elinewidth=2, linewidth=2, label='f1')
 print(training_mean)
 # plt.errorbar(x, training_mean[3], yerr=training_std[3], fmt='r-', elinewidth=2, linewidth=2, label='Accur')
 plt.grid()
-plt.xticks(np.arange(0, 2000, 50))
+plt.xticks(np.arange(0, 300, 10))
 plt.yticks(np.arange(0, training_mean[0]+1, 0.1))
 plt.ylabel('Loss with standard deviation')
 plt.xlabel('Batches (thousands)')
