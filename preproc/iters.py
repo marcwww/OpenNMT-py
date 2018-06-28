@@ -24,7 +24,7 @@ def tokenizer_char(txt):
 def tokenizer_charNword(txt):
     return list(txt) + [SEG_WORD] + list(jieba.cut(txt))
 
-def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='charNword'):
+def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
 
     if level == 'word':
         tokenizer = tokenizer_word
