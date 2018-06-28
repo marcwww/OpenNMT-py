@@ -9,20 +9,33 @@ UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 SEG_WORD = '<seg>'
 
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
+STOP_WORDS=set()
+
+with open(os.path.join(DATA, 'stop_words.txt'), 'r') as f:
+    for line in f.readlines():
+        w = line.split(' ')[0]
+        STOP_WORDS.add(w)
 
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
 
 def tokenizer_word(txt):
-    return list(jieba.cut(txt))
+    return [w for w in jieba.cut(txt) if w not in STOP_WORDS]
 
 def tokenizer_char(txt):
-    return list(txt)
+    return [w for w in list(txt) if w not in STOP_WORDS]
 
 def tokenizer_charNword(txt):
-    return list(txt) + [SEG_WORD] + list(jieba.cut(txt))
+    res = []
+    for w in list(jieba.cut(txt)):
+        if w in STOP_WORDS:
+            continue
+        res.append(w)
+        if len(w)>1 and w!='***':
+            res.extend(list(w))
+    return res
 
 def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
 
@@ -63,6 +76,6 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
     return TEXT, LABEL, train_iter, valid_iter
 
 if __name__ == '__main__':
-    TEXT, LABEL, train_iter, valid_iter = build_iters()
+    TEXT, LABEL, train_iter, valid_iter = build_iters(level='charNword')
     for sample in train_iter:
         print(sample.seq1)
