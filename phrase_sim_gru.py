@@ -290,7 +290,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     TEXT, LALEBL, train_iter, valid_iter = \
-        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size)
+        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size, level=opt.level)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
