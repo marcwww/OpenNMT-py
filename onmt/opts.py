@@ -63,6 +63,11 @@ def model_opts(parser):
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
 
+    group.add_argument('-nstack', type=int, default=2)
+    group.add_argument('-stack_depth', type=int, default=2)
+    group.add_argument('-stack_size', type=int, default=100)
+    group.add_argument('-stack_elem_size', type=int, default=400)
+
     group.add_argument('-input_feed', type=int, default=1,
                        help="""Feed the context vector at each time step as
                        additional input (via concatenation with the word
