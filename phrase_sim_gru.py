@@ -74,7 +74,7 @@ class Encoder(nn.Module):
         self.n_layers = n_layers
         self.gru = nn.GRU(hdim, hdim, n_layers,
                           dropout, bidirectional=True)
-        self.odim = self.n_layers * hdim
+        self.odim = hdim * 2
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
@@ -82,9 +82,10 @@ class Encoder(nn.Module):
         # outputs = outputs[:,:,:self.hdim]\
         #           + outputs[:,:,self.hdim:]
         # hidden = hidden[:self.n_layers]
-        hidden = torch.cat([hidden[i] for i in range(self.n_layers)], dim=1)
+        # hidden = torch.cat([hidden[i] for i in range(self.n_layers)], dim=1)
+        final_hidden = outputs[-1]
 
-        return outputs, hidden
+        return outputs, final_hidden
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
