@@ -38,16 +38,16 @@ class FourWay(nn.Module):
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder):
+    def __init__(self, encoder, clf_hdim):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.avg = Avg()
         self.fourway =FourWay()
         self.generator = nn.Sequential(
-            nn.Linear(4*encoder.odim,1*encoder.odim),
+            nn.Linear(4*encoder.odim, clf_hdim),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(1*encoder.odim,2))
+            nn.Linear(clf_hdim, 2))
             # nn.Sigmoid())
 
     def forward(self, seq1, seq2):
@@ -305,7 +305,7 @@ if __name__ == '__main__':
                       TEXT.vocab.stoi[PAD_WORD],
                       opt.enc_layers,
                       opt.dropout)
-    model = PhraseSim(encoder).to(device)
+    model = PhraseSim(encoder, 100).to(device)
     init_model(opt, model)
 
     # print(model.state_dict())
