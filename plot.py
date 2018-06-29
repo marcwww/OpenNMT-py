@@ -10,9 +10,10 @@ import crash_on_ipy
 # sys.path.append(os.path.abspath(os.getcwd() + "./../"))
 
 # files = glob("./repeat-copy/*-{}.json".format(batch_num))
-name='demo-epoch-239'
-
-fname = "./"+ name +'.json'
+# name='demo-epoch-239'
+#
+# fname = "./"+ name +'.json'
+fname = 'gru_ch_sw-epoch-149.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
