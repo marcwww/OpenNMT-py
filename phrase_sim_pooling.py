@@ -15,7 +15,7 @@ from onmt.utils import optimizers
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
-SAVE_PER = 10
+SAVE_PER = 5
 
 class Avg(nn.Module):
 
