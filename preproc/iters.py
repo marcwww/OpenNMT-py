@@ -9,8 +9,8 @@ UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 SEG_WORD = '<seg>'
 
-# HOME=os.path.abspath('.')
-HOME=os.path.abspath('..')
+HOME=os.path.abspath('.')
+# HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
 
