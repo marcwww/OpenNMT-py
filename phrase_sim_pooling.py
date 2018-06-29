@@ -320,7 +320,7 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model, opt, None)
     criterion = nn.BCELoss(size_average=True)
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
-             'end': 10000}
+             'end': opt.nepoch}
 
     train(train_iter, valid_iter, epoch,
           model, optim, criterion, opt, cweights)
