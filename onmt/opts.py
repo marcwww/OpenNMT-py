@@ -215,6 +215,8 @@ def train_opts(parser):
     group.add_argument('-nepoch', default=20, type=int)
     group.add_argument('-load_idx', default=-1, type=int)
     group.add_argument('-max_len_total', default=200,type=int)
+    group.add_argument('-ftrain', default='train.tsv', type=str)
+    group.add_argument('-fvalid', default='valid.tsv', type=str)
 
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as

@@ -9,8 +9,8 @@ UNK_WORD = '<unk>'
 BOS_WORD = '<s>'
 SEG_WORD = '<seg>'
 
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
 
@@ -33,6 +33,8 @@ def tokenizer_charNword(txt):
         if w in STOP_WORDS:
             continue
         res.append(w)
+        if w == '***':
+            print('***')
         if len(w)>1 and w!='***':
             res.extend(list(w))
     return res
