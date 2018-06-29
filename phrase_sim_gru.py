@@ -15,7 +15,7 @@ from onmt.utils import optimizers
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
-SAVE_PER = 10
+SAVE_PER = 5
 
 class Avg(nn.Module):
 
@@ -290,7 +290,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     TEXT, LALEBL, train_iter, valid_iter = \
-        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size, level=opt.level)
+        iters.build_iters(ftrain=opt.ftrain, fvalid=opt.fvalid,
+                          bsz=opt.batch_size, level=opt.level)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
