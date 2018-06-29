@@ -16,7 +16,7 @@ from torch.nn import functional as F
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
-SAVE_PER = 5
+SAVE_PER = 1
 
 class Avg(nn.Module):
 
