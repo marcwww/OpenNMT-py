@@ -4,9 +4,9 @@ from __future__ import print_function
 import argparse
 from onmt.models.sru import CheckSRU
 
-def valid_opts(parser):
-    group = parser.add_argument_group('Valid')
-    group.add_argument('-fvalid', type=str)
+def test_opts(parser):
+    group = parser.add_argument_group('Test')
+    group.add_argument('-ftest', type=str)
     group.add_argument('-fout', type=str)
 
 def model_opts(parser):

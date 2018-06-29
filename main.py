@@ -7,9 +7,12 @@ from onmt.encoders import transformer as enc
 import torch
 # from phrase_sim_4way import PhraseSim
 # from phrase_sim_4way import init_model
-from phrase_sim_gru import PhraseSim
-from phrase_sim_gru import Encoder
-from phrase_sim_gru import init_model
+# from phrase_sim_gru import PhraseSim
+# from phrase_sim_gru import Encoder
+# from phrase_sim_gru import init_model
+from phrase_sim_pooling import PhraseSim
+from phrase_sim_pooling import PoolingEncoder
+from phrase_sim_pooling import init_model
 from torchtext import data
 import torchtext
 import os
@@ -17,7 +20,7 @@ from preproc.iters import PAD_WORD
 import codecs
 import chardet
 
-def to_valid(val_iter, model):
+def to_test(val_iter, model):
     model.eval()
 
     index_lst = []
@@ -27,7 +30,7 @@ def to_valid(val_iter, model):
             index, seq1, seq2 = sample.index, sample.seq1,\
                               sample.seq2
             # print(index, seq1, seq2)
-            print((i+.0)/len(valid_iter))
+            # print((i+.0)/len(valid_iter))
 
             seq1 = seq1.to(device)
             seq2 = seq2.to(device)
@@ -36,7 +39,7 @@ def to_valid(val_iter, model):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            pred = probs.max(dim=1)[1].cpu()
             pred_lst.extend(pred.numpy())
             index_lst.extend(index.numpy())
 
@@ -61,7 +64,7 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     opts.add_md_help_argument(parser)
-    opts.valid_opts(parser)
+    opts.test_opts(parser)
     opts.model_opts(parser)
     opts.train_opts(parser)
     opt = parser.parse_args()
@@ -69,33 +72,28 @@ if __name__ == '__main__':
     INDEX = torchtext.data.Field(sequential=False, use_vocab=False)
 
     TEXT, LABEL, train_iter, valid_iter = \
-        iters.build_iters(ftrain='train.tsv', bsz=opt.batch_size, level='char')
+        iters.build_iters(ftrain=opt.ftrain, fvalid=opt.fvalid, bsz=opt.batch_size, level=opt.level)
 
-    fvalid = change_file_encoding(opt.fvalid)
+    ftest = change_file_encoding(opt.ftest)
 
-    valid = data.TabularDataset(path=fvalid, format='tsv',
+    test = data.TabularDataset(path=ftest, format='tsv',
                                 fields=[
                                     ('index', INDEX),
                                     ('seq1', TEXT),
                                     ('seq2', TEXT),
                                 ])
 
-    valid_iter = data.Iterator(valid, batch_size=opt.batch_size,
+    test_iter = data.Iterator(test, batch_size=opt.batch_size,
                                sort=False, repeat=False)
-
-    embeddings_enc = model_builder.build_embeddings(opt, TEXT.vocab, [])
-    encoder = enc.TransformerEncoder(opt.enc_layers, opt.rnn_size,
-                                     opt.dropout, embeddings_enc)
-
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
 
-    encoder = Encoder(len(TEXT.vocab.stoi),
+    encoder = PoolingEncoder(len(TEXT.vocab.stoi),
                       opt.rnn_size,
                       TEXT.vocab.stoi[PAD_WORD],
                       opt.enc_layers,
                       opt.dropout)
-    model = PhraseSim(encoder).to(device)
+    model = PhraseSim(encoder, 100).to(device)
     init_model(opt, model)
 
     if opt.load_idx != -1:
@@ -106,7 +104,7 @@ if __name__ == '__main__':
         model.load_state_dict(model_dict)
         print("Loading model from '%s'" % (model_fname))
 
-    indices, pred = to_valid(valid_iter,model)
+    indices, pred = to_test(test_iter,model)
     with open(opt.fout, 'w') as f:
         for index, y in zip(indices, pred):
             f.write(str(index) + '\t%d\n' % int(y))
