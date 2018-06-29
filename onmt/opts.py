@@ -21,6 +21,7 @@ def model_opts(parser):
                        help='Word embedding size for src.')
     group.add_argument('-word_vec_size', type=int, default=-1,
                        help='Word embedding size for src and tgt.')
+    group.add_argument('-clf_dim', type=int, default=100)
 
     group.add_argument('-share_decoder_embeddings', action='store_true',
                        help="""Use a shared weight matrix for the input and
