@@ -46,8 +46,9 @@ class PhraseSim(nn.Module):
         self.generator = nn.Sequential(
             nn.Linear(4*encoder.odim,1*encoder.odim),
             nn.ReLU(),
-            nn.Linear(1*encoder.odim,1),
-            nn.Sigmoid())
+            nn.Dropout(),
+            nn.Linear(1*encoder.odim,2))
+            # nn.Sigmoid())
 
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
@@ -130,12 +131,12 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor)
+    # lbl = lbl.type(torch.FloatTensor)
 
-    bs_weight = lbl.clone().\
-        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-
-    criterion.weight = bs_weight.to(device)
+    # bs_weight = lbl.clone().\
+    #     apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
+    #
+    # criterion.weight = bs_weight.to(device)
 
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
@@ -318,7 +319,8 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model, opt, None)
-    criterion = nn.BCELoss(size_average=True)
+    # criterion = nn.BCELoss(size_average=True)
+    criterion = nn.CrossEntropyLoss()
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
              'end': opt.nepoch}
 
