@@ -88,13 +88,10 @@ class PhraseSim(nn.Module):
 
 class PoolingEncoder(nn.Module):
 
-    def __init__(self, voc_size, hdim, padding_idx,
-                 n_layers=1, dropout=0.5):
+    def __init__(self, embedding, hdim, n_layers=1, dropout=0.5):
         super(PoolingEncoder, self).__init__()
         self.hdim = hdim
-        self.embedding = nn.Embedding(voc_size,
-                                      hdim,
-                                      padding_idx=padding_idx)
+        self.embedding = embedding
         self.linear = nn.Linear(hdim, hdim)
         self.dropout = nn.Dropout(dropout)
         self.odim = hdim
@@ -131,13 +128,11 @@ class Atten(nn.Module):
 
 class GruEncoder(nn.Module):
 
-    def __init__(self, voc_size, hdim, padding_idx,
+    def __init__(self, embedding, hdim,
                  n_layers=1, dropout=0.5):
         super(GruEncoder, self).__init__()
         self.hdim = hdim
-        self.embedding = nn.Embedding(voc_size,
-                                      hdim,
-                                      padding_idx=padding_idx)
+        self.embedding = embedding
         self.dropout = nn.Dropout(dropout)
         self.n_layers = n_layers
         self.gru = nn.GRU(hdim, hdim, n_layers,
@@ -361,15 +356,18 @@ if __name__ == '__main__':
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
-    gru_encoder = GruEncoder(len(TEXT.vocab.stoi),
-                      opt.rnn_size,
-                      TEXT.vocab.stoi[PAD_WORD],
-                      opt.enc_layers,
-                      opt.dropout)
+
+    embedding = nn.Embedding(len(TEXT.vocab.stoi),
+                 opt.rnn_size,
+                 padding_idx=TEXT.vocab.stoi[PAD_WORD])
+
+    gru_encoder = GruEncoder(embedding,
+                             opt.rnn_size,
+                             opt.enc_layers,
+                             opt.dropout)
     pooling_encoder = \
-        PoolingEncoder(len(TEXT.vocab.stoi),
+        PoolingEncoder(embedding,
                        opt.rnn_size,
-                       TEXT.vocab.stoi[PAD_WORD],
                        opt.enc_layers,
                        opt.dropout)
     model = PhraseSim(gru_encoder, pooling_encoder, opt.dropout, opt.clf_dim).to(device)
