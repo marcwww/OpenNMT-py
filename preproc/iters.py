@@ -27,6 +27,8 @@ def tokenizer_word(txt):
     return [w for w in jieba.cut(txt) if w not in STOP_WORDS]
 
 def tokenizer_char(txt):
+    # if txt.find('***') !=-1 :
+    #     print('***')
     txt = re.sub('\*\*\*', '*', txt)
     return [w for w in list(txt) if w not in STOP_WORDS]
 
