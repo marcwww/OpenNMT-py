@@ -317,7 +317,7 @@ if __name__ == '__main__':
     weight = torch.Tensor([cweights['wneg'], cweights['wpos']]).to(device)
     criterion = nn.CrossEntropyLoss(weight=weight)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
-             'end':10000,
+             'end':opt.nepoch,
              'save_per':opt.save_per}
 
     # print(valid(train_iter,model))
