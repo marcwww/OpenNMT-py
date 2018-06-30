@@ -10,9 +10,12 @@ import torch
 # from phrase_sim_gru import PhraseSim
 # from phrase_sim_gru import Encoder
 # from phrase_sim_gru import init_model
-from phrase_sim_pooling import PhraseSim
-from phrase_sim_pooling import PoolingEncoder
-from phrase_sim_pooling import init_model
+# from phrase_sim_pooling import PhraseSim
+# from phrase_sim_pooling import PoolingEncoder
+# from phrase_sim_pooling import init_model
+from phrase_sim_atten_dropout import PhraseSim
+from phrase_sim_atten_dropout import Encoder
+from phrase_sim_atten_dropout import init_model
 from torchtext import data
 import torchtext
 import os
@@ -88,12 +91,12 @@ if __name__ == '__main__':
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
 
-    encoder = PoolingEncoder(len(TEXT.vocab.stoi),
+    encoder = Encoder(len(TEXT.vocab.stoi),
                       opt.rnn_size,
                       TEXT.vocab.stoi[PAD_WORD],
                       opt.enc_layers,
                       opt.dropout)
-    model = PhraseSim(encoder, 100).to(device)
+    model = PhraseSim(encoder, opt.dropout, opt.clf_dim).to(device)
     init_model(opt, model)
 
     if opt.load_idx != -1:

@@ -1,6 +1,7 @@
 import torchtext
 import os
 import jieba
+import re
 
 from torchtext import data
 
@@ -22,21 +23,20 @@ with open(os.path.join(DATA, 'stop_words.txt'), 'r') as f:
 jieba.load_userdict(os.path.join(DATA,'dict.txt'))
 
 def tokenizer_word(txt):
+    txt = re.sub('\*\*\*', '*', txt)
     return [w for w in jieba.cut(txt) if w not in STOP_WORDS]
 
 def tokenizer_char(txt):
+    txt = re.sub('\*\*\*', '*', txt)
     return [w for w in list(txt) if w not in STOP_WORDS]
 
 def tokenizer_charNword(txt):
     res = []
+    txt = re.sub('\*\*\*', '*', txt)
     for w in list(jieba.cut(txt)):
         if w in STOP_WORDS:
             continue
         res.append(w)
-        if w == '***':
-            print('***')
-        if len(w)>1 and w!='***':
-            res.extend(list(w))
     return res
 
 def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):

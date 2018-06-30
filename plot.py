@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'pooling_char_bad_split-epoch-39.json'
+fname = 'dl_full-epoch-234.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
@@ -34,6 +34,9 @@ training = np.array(history['loss'])
 f1 = np.array(history['f1s'])
 f1 = f1.reshape(-1)
 
+print(f1[-1])
+print(np.where(f1 == np.max(f1)), np.max(f1))
+
 print("Training history (seed x metric x sequence) =", training.shape)
 
 # Average every dv values across each (seed, metric)
@@ -42,7 +45,7 @@ dv = 1000
 training_mean = training[:l*dv].reshape(-1, dv).mean(axis=1)
 f1_mean = f1[:l*dv].reshape(-1, dv).mean(axis=1)
 training_std = training[:l*dv].reshape(-1, dv).std(axis=1)
-print(training.shape)
+# print(training.shape)
 
 # Average the seeds
 fig = plt.figure(figsize=(14, 5))
@@ -53,13 +56,13 @@ x = np.arange(l)
 # Plot the cost
 # plt.plot(x, training_mean[0], 'o-', linewidth=2, label='Cost')
 plt.errorbar(x, training_mean, fmt='o-', elinewidth=2, linewidth=2, label='loss_mean')
-plt.errorbar(x, f1_mean, fmt='x-', elinewidth=2, linewidth=2, label='f1')
+plt.errorbar(x, f1_mean, fmt='x-', elinewidth=1, linewidth=1, label='f1')
 # plt.errorbar(x, training_mean+training_std, fmt='x-', elinewidth=2, linewidth=2, label='loss+std')
 # plt.errorbar(x, training_mean-training_std, fmt='x-', elinewidth=2, linewidth=2, label='loss-std')
-print(training_mean)
+# print(training_mean)
 # plt.errorbar(x, training_mean[3], yerr=training_std[3], fmt='r-', elinewidth=2, linewidth=2, label='Accur')
 plt.grid()
-plt.xticks(np.arange(0, 50, 5))
+plt.xticks(np.arange(0, 400, 20))
 plt.yticks(np.arange(0, 1, 0.05))
 plt.ylabel('Loss with standard deviation')
 plt.xlabel('Batches (thousands)')
