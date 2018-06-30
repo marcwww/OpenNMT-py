@@ -16,7 +16,6 @@ from torch.nn.init import xavier_uniform_
 
 
 LOGGER = logging.getLogger(__name__)
-SAVE_PER = 10
 
 def clip_grads(model):
     """Gradient clipping to the range [10, 10]."""
@@ -31,6 +30,11 @@ class Avg(nn.Module):
         len, bsz, hdim = mem_bank.shape
 
         return mem_bank.sum(dim=0)/len
+class Max(nn.Module):
+
+    def forward(self, mem_bank):
+        h, _ = torch.max(mem_bank, dim=0, keepdim=False)
+        return h
 
 class FourWay(nn.Module):
 
@@ -48,13 +52,14 @@ class PhraseSim(nn.Module):
     def __init__(self, encoder, opt):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
-        self.avg = Avg()
+        self.avg = Avg() if opt.pooling == 'avg' else Max()
         self.fourway =FourWay()
         self.generator = nn.Sequential(
-            nn.Linear(4*opt.rnn_size,1*opt.rnn_size),
+            nn.Linear(4*opt.rnn_size, opt.clf_dim),
             nn.ReLU(),
-            nn.Linear(1*opt.rnn_size,1),
-            nn.Sigmoid())
+            nn.Dropout(opt.dropout),
+            nn.Linear(opt.clf_dim, 2))
+        self.dropout = nn.Dropout(opt.dropout)
 
     def forward(self, seq1, seq2):
         seq1 = seq1.unsqueeze(2)
@@ -68,6 +73,7 @@ class PhraseSim(nn.Module):
         mem_avg2 = self.avg(memory_bank2)
 
         cat_res = self.fourway(mem_avg1,mem_avg2)
+        cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
 
@@ -132,25 +138,12 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor)
-
-    bs_weight = lbl.clone().\
-        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-
-    criterion.weight = bs_weight.to(device)
-
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
     probs = model(seq1, seq2)
-    # decoder_outputs : (1,bsz,hdim)
-    # probs : (bsz)
-
     loss = criterion(probs, lbl)
     loss.backward()
-    # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-    # sum=param_sum(model.parameters())
-    # clip_grads(model)
     optim.step()
 
     return loss
@@ -179,6 +172,7 @@ def train(train_iter, val_iter, epoch, model,
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
+    save_per = epoch['save_per']
 
     # valid(val_iter,model)
 
@@ -202,7 +196,7 @@ def train(train_iter, val_iter, epoch, model,
         recalls.extend([recall for _ in range(nbatch)])
         f1s.append([f1 for _ in range(nbatch)])
 
-        if (epoch+1) % SAVE_PER == 0:
+        if (epoch+1) % save_per == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter, model):
@@ -224,11 +218,9 @@ def valid(val_iter, model):
             # lbl : (bsz)
             probs = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            pred = probs.max(dim=1)[1].cpu()
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
-
-            # print((i+0.0)/len(val_iter))
 
     accurracy = metrics.accuracy_score(np.array(lbl_lst),np.array(pred_lst))
     precision = metrics.precision_score(np.array(lbl_lst),np.array(pred_lst))
@@ -291,7 +283,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     TEXT, LALEBL, train_iter, valid_iter = \
-        iters.build_iters(ftrain='train.tsv',bsz=opt.batch_size)
+        iters.build_iters(ftrain=opt.ftrain, fvalid=opt.fvalid,
+                          bsz=opt.batch_size, level=opt.level)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
@@ -320,10 +313,12 @@ if __name__ == '__main__':
         print("Loading model from '%s'" % (model_fname))
 
     # model.generator = generator.to(device)
-    optim = optimizers.build_optim(model,opt,None)
-    criterion = nn.BCELoss(size_average=True)
+    optim = optimizers.build_optim(model, opt, None)
+    weight = torch.Tensor([cweights['wneg'], cweights['wpos']]).to(device)
+    criterion = nn.CrossEntropyLoss(weight=weight)
     epoch = {'start':opt.load_idx if opt.load_idx != -1 else 0,
-             'end':10000}
+             'end':10000,
+             'save_per':opt.save_per}
 
     # print(valid(train_iter,model))
     train(train_iter,valid_iter,epoch,

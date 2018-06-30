@@ -35,6 +35,7 @@ def model_opts(parser):
                        Necessary for non-RNN style models.
                        """)
     group.add_argument('-level', type=str, default='char')
+    group.add_argument('-pooling', type=str, default='avg')
 
     group = parser.add_argument_group('Model-Embedding Features')
     group.add_argument('-feat_merge', type=str, default='concat',
@@ -55,7 +56,7 @@ def model_opts(parser):
 
     group.add_argument('-layers', type=int, default=-1,
                        help='Number of layers in enc/dec.')
-    group.add_argument('-enc_layers', type=int, default=2,
+    group.add_argument('-enc_layers', type=int, default=1,
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
