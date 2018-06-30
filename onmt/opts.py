@@ -218,6 +218,7 @@ def train_opts(parser):
     group.add_argument('-max_len_total', default=200,type=int)
     group.add_argument('-ftrain', default='train.tsv', type=str)
     group.add_argument('-fvalid', default='valid.tsv', type=str)
+    group.add_argument('-save_per', default=5, type=int)
 
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as
