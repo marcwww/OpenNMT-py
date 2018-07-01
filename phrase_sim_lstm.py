@@ -77,9 +77,9 @@ class Encoder(nn.Module):
                            bidirectional=bidirection)
         self.odim = hdim * 2 if bidirection else hdim
 
-    def forward(self, inputs, hidden=None, c=None):
+    def forward(self, inputs):
         embs = self.embedding(inputs)
-        outputs, hidden, c = self.lstm(embs, hidden, c)
+        outputs, _ = self.lstm(embs, None)
         # outputs = outputs[:,:,:self.hdim]\
         #           + outputs[:,:,self.hdim:]
         # hidden = hidden[:self.n_layers]
