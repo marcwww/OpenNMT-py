@@ -313,7 +313,7 @@ if __name__ == '__main__':
                       opt.enc_layers,
                       opt.dropout,
                       opt.bidirection)
-    model = PhraseSim(encoder).to(device)
+    model = PhraseSim(encoder, opt.dropout).to(device)
     init_model(opt, model)
 
     # print(model.state_dict())
