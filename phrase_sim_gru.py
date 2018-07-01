@@ -38,7 +38,7 @@ class FourWay(nn.Module):
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder):
+    def __init__(self, encoder, dropout):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.avg = Avg()
@@ -46,8 +46,10 @@ class PhraseSim(nn.Module):
         self.generator = nn.Sequential(
             nn.Linear(4*encoder.odim,1*encoder.odim),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(1*encoder.odim,1),
             nn.Sigmoid())
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
@@ -57,6 +59,7 @@ class PhraseSim(nn.Module):
         _, hidden2 = self.encoder(seq2)
 
         cat_res = self.fourway(hidden1,hidden2)
+        cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
 
@@ -75,9 +78,12 @@ class Encoder(nn.Module):
         self.gru = nn.GRU(hdim, hdim, n_layers,
                           dropout, bidirectional=bidirection)
         self.odim = hdim * 2 if bidirection else hdim
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
+        embs = self.dropout(embs)
+
         outputs, hidden = self.gru(embs, hidden)
         # outputs = outputs[:,:,:self.hdim]\
         #           + outputs[:,:,self.hdim:]
