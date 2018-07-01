@@ -65,7 +65,7 @@ class PhraseSim(nn.Module):
 class Encoder(nn.Module):
 
     def __init__(self, voc_size, hdim, padding_idx,
-                 n_layers=1, dropout=0.5):
+                 n_layers=1, dropout=0.5, bidirection=True):
         super(Encoder, self).__init__()
         self.hdim = hdim
         self.embedding = nn.Embedding(voc_size,
@@ -305,7 +305,8 @@ if __name__ == '__main__':
                       opt.rnn_size,
                       TEXT.vocab.stoi[PAD_WORD],
                       opt.enc_layers,
-                      opt.dropout)
+                      opt.dropout,
+                      opt.bidirection)
     model = PhraseSim(encoder).to(device)
     init_model(opt, model)
 
