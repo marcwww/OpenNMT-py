@@ -73,8 +73,8 @@ class Encoder(nn.Module):
                                       padding_idx=padding_idx)
         self.n_layers = n_layers
         self.gru = nn.GRU(hdim, hdim, n_layers,
-                          dropout, bidirectional=True)
-        self.odim = hdim * 2
+                          dropout, bidirectional=bidirection)
+        self.odim = hdim * 2 if bidirection else hdim
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
