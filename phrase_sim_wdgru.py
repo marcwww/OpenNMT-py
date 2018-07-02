@@ -111,9 +111,9 @@ class Encoder(nn.Module):
             for i in range(self.n_layers):
                 weight_hh = getattr(self.gru, 'weight_hh_l%d_raw' % i)
                 weight_ih = getattr(self.gru, 'weight_ih_l%d_raw' % i)
-                mask_hh = torch.zeros(weight_hh.shape).\
+                mask_hh = weight_hh.data.new().resize_(weight_hh.shape).\
                     bernoulli_(1-self.dropout_prob)
-                mask_ih = torch.zeros(weight_ih.shape).\
+                mask_ih = weight_ih.data.new().resize_(weight_ih.shape).\
                     bernoulli_(1-self.dropout_prob)
                 setattr(self.gru, 'weight_hh_l%d' % i,
                         torch.nn.Parameter(weight_hh * mask_hh))
@@ -124,9 +124,11 @@ class Encoder(nn.Module):
                                             'weight_hh_l%d_reverse_raw' % i)
                     weight_ih_rev = getattr(self.gru,
                                             'weight_ih_l%d_reverse_raw' % i)
-                    mask_hh_rev = torch.zeros(weight_hh_rev.shape). \
+                    mask_hh_rev = weight_hh_rev.data.new().\
+                        resize_(weight_hh_rev.shape). \
                         bernoulli_(1 - self.dropout_prob)
-                    mask_ih_rev = torch.zeros(weight_ih_rev.shape). \
+                    mask_ih_rev = weight_ih_rev.data.new().\
+                        resize_(weight_ih_rev.shape). \
                         bernoulli_(1 - self.dropout_prob)
                     setattr(self.gru, 'weight_hh_l%d_reverse' % i,
                             torch.nn.Parameter(weight_hh_rev * mask_hh_rev))
