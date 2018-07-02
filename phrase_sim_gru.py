@@ -31,7 +31,7 @@ class FourWay(nn.Module):
         way1 = u1
         way2 = u2
         way3 = torch.abs(u1-u2)
-        way4 = u1*u2
+        way4 = torch.sqrt(u1*u2)
 
         return torch.cat([way1,way2,way3,way4],dim=1)
 
