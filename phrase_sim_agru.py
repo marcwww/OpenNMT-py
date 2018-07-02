@@ -102,7 +102,7 @@ class Encoder(nn.Module):
                           dropout, bidirectional=bidirection)
         self.odim = hdim * 2 if bidirection else hdim
         self.dropout = nn.Dropout(dropout)
-        self.attention = Attention(odim)
+        self.attention = Attention(self.odim)
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
