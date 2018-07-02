@@ -65,7 +65,7 @@ def model_opts(parser):
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
-    group.add_argument('-bidirection', type=bool, default=False)
+    group.add_argument('-bidirection', action='store_true', default=False)
 
     group.add_argument('-nstack', type=int, default=2)
     group.add_argument('-stack_depth', type=int, default=2)

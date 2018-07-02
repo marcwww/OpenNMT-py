@@ -91,7 +91,7 @@ class Attention(nn.Module):
 class Encoder(nn.Module):
 
     def __init__(self, voc_size, hdim, padding_idx,
-                 n_layers=1, dropout=0.5, bidirection=True):
+                 n_layers=1, dropout=0.5, bidirection=False):
         super(Encoder, self).__init__()
         self.hdim = hdim
         self.embedding = nn.Embedding(voc_size,
