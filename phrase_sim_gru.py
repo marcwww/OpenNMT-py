@@ -25,15 +25,21 @@ class Avg(nn.Module):
 
         return mem_bank.sum(dim=0)/len
 
-class FourWay(nn.Module):
+class MultiWay(nn.Module):
+
+    def __init__(self):
+        super(MultiWay, self).__init__()
+        self.nways = 3
 
     def forward(self, u1, u2):
-        way1 = u1
-        way2 = u2
+        # way1 = u1
+        # way2 = u2
         way3 = torch.abs(u1-u2)
-        way4 = torch.sqrt(u1*u2)
+        way4 = u1*u2
+        way5 = torch.max(torch.stack([u1*u1,u2*u2]), dim=0)[0]
 
-        return torch.cat([way1,way2,way3,way4],dim=1)
+        # return torch.cat([way1,way2,way3,way4],dim=1)
+        return torch.cat([way3,way4,way5],dim=1)
 
 
 class PhraseSim(nn.Module):
@@ -42,9 +48,10 @@ class PhraseSim(nn.Module):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.avg = Avg()
-        self.fourway =FourWay()
+        self.MultiWay =MultiWay()
         self.generator = nn.Sequential(
-            nn.Linear(4*encoder.odim,1*encoder.odim),
+            nn.Linear(self.MultiWay.nways * encoder.odim,
+                      1 * encoder.odim),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(1*encoder.odim,1),
@@ -58,7 +65,7 @@ class PhraseSim(nn.Module):
         _, hidden1 = self.encoder(seq1)
         _, hidden2 = self.encoder(seq2)
 
-        cat_res = self.fourway(hidden1,hidden2)
+        cat_res = self.MultiWay(hidden1,hidden2)
         cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
