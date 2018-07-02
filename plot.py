@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'dl_full-epoch-234.json'
+fname = 'mgru_128dim-epoch-104.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
@@ -32,9 +32,9 @@ history = json.loads(open(fname, "rt").read())
 # training = np.array(training)
 training = np.array(history['loss'])
 f1 = np.array(history['f1s'])
+print(np.max(f1))
 f1 = f1.reshape(-1)
 
-print(f1[-1])
 print(np.where(f1 == np.max(f1)), np.max(f1))
 
 print("Training history (seed x metric x sequence) =", training.shape)
