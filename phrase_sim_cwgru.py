@@ -38,7 +38,7 @@ class FourWay(nn.Module):
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder_ch, encoder_w, dropout):
+    def __init__(self, encoder_ch, encoder_w, clf_dim, dropout):
         super(PhraseSim, self).__init__()
         self.encoder_ch = encoder_ch
         self.encoder_w = encoder_w
@@ -47,10 +47,10 @@ class PhraseSim(nn.Module):
         cat_dim = encoder_ch.odim + encoder_w.odim
         self.generator = nn.Sequential(
             nn.Linear(4*cat_dim,
-                      1*cat_dim),
+                      clf_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(1*cat_dim,1),
+            nn.Linear(clf_dim,1),
             nn.Sigmoid())
         self.dropout = nn.Dropout(dropout)
 
@@ -355,7 +355,7 @@ if __name__ == '__main__':
                          opt.dropout,
                          opt.bidirection)
 
-    model = PhraseSim(encoder_ch, encoder_w, opt.dropout).to(device)
+    model = PhraseSim(encoder_ch, encoder_w, opt.clf_dim, opt.dropout).to(device)
     init_model(opt, model)
 
     # print(model.state_dict())
