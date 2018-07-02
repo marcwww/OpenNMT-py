@@ -90,29 +90,65 @@ class Encoder(nn.Module):
         self.dropout_prob = dropout
         self.bidirection = bidirection
 
+        for i in range(self.n_layers):
+            weight_hh = getattr(self.gru, 'weight_hh_l%d' % i)
+            weight_ih = getattr(self.gru, 'weight_ih_l%d' % i)
+            self.gru.register_buffer('weight_hh_l%d_raw' % i, weight_hh)
+            self.gru.register_buffer('weight_ih_l%d_raw' % i, weight_ih)
+
+            if self.bidirection:
+                weight_hh_rev = getattr(self.gru, 'weight_hh_l%d_reverse' % i)
+                weight_ih_rev = getattr(self.gru, 'weight_ih_l%d_reverse' % i)
+                self.gru.register_buffer('weight_hh_l%d_reverse_raw' % i,
+                                         weight_hh_rev)
+                self.gru.register_buffer('weight_ih_l%d_reverse_raw' % i,
+                                         weight_ih_rev)
+
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         # embs = self.dropout(embs)
         if self.training:
             for i in range(self.n_layers):
-                weight_hh = getattr(self.gru, 'weight_hh_l%d' % i)
-                weight_ih = getattr(self.gru, 'weight_ih_l%d' % i)
-                mask_hh = weight_hh.data.new().resize_(weight_hh.shape).\
+                weight_hh = getattr(self.gru, 'weight_hh_l%d_raw' % i)
+                weight_ih = getattr(self.gru, 'weight_ih_l%d_raw' % i)
+                mask_hh = torch.zeros(weight_hh.shape).\
                     bernoulli_(1-self.dropout_prob)
-                mask_ih = weight_ih.data.new().resize_(weight_ih.shape).\
+                mask_ih = torch.zeros(weight_ih.shape).\
                     bernoulli_(1-self.dropout_prob)
-                setattr(self.gru, 'weight_hh_l%d' % i, torch.nn.Parameter(weight_hh * mask_hh))
-                setattr(self.gru, 'weight_ih_l%d' % i, torch.nn.Parameter(weight_ih * mask_ih))
+                setattr(self.gru, 'weight_hh_l%d' % i,
+                        torch.nn.Parameter(weight_hh * mask_hh))
+                setattr(self.gru, 'weight_ih_l%d' % i,
+                        torch.nn.Parameter(weight_ih * mask_ih))
                 if self.bidirection:
-                    weight_hh_rev = getattr(self.gru, 'weight_hh_l%d_reverse' % i)
-                    weight_ih_rev = getattr(self.gru, 'weight_ih_l%d_reverse' % i)
-                    mask_hh_rev = weight_hh.data.new().resize_(weight_hh_rev.shape). \
+                    weight_hh_rev = getattr(self.gru,
+                                            'weight_hh_l%d_reverse_raw' % i)
+                    weight_ih_rev = getattr(self.gru,
+                                            'weight_ih_l%d_reverse_raw' % i)
+                    mask_hh_rev = torch.zeros(weight_hh_rev.shape). \
                         bernoulli_(1 - self.dropout_prob)
-                    mask_ih_rev = weight_ih.data.new().resize_(weight_ih_rev.shape). \
+                    mask_ih_rev = torch.zeros(weight_ih_rev.shape). \
                         bernoulli_(1 - self.dropout_prob)
-                    setattr(self.gru, 'weight_hh_l%d' % i, torch.nn.Parameter(weight_hh_rev * mask_hh_rev))
-                    setattr(self.gru, 'weight_ih_l%d' % i, torch.nn.Parameter(weight_ih_rev * mask_ih_rev))
-
+                    setattr(self.gru, 'weight_hh_l%d_reverse' % i,
+                            torch.nn.Parameter(weight_hh_rev * mask_hh_rev))
+                    setattr(self.gru, 'weight_ih_l%d_reverse' % i,
+                            torch.nn.Parameter(weight_ih_rev * mask_ih_rev))
+        else:
+            for i in range(self.n_layers):
+                weight_hh = getattr(self.gru, 'weight_hh_l%d_raw' % i)
+                weight_ih = getattr(self.gru, 'weight_ih_l%d_raw' % i)
+                setattr(self.gru, 'weight_hh_l%d' % i,
+                        torch.nn.Parameter(weight_hh))
+                setattr(self.gru, 'weight_ih_l%d' % i,
+                        torch.nn.Parameter(weight_ih))
+                if self.bidirection:
+                    weight_hh_rev = getattr(self.gru,
+                                            'weight_hh_l%d_reverse_raw' % i)
+                    weight_ih_rev = getattr(self.gru,
+                                            'weight_ih_l%d_reverse_raw' % i)
+                    setattr(self.gru, 'weight_hh_l%d_reverse' % i,
+                            torch.nn.Parameter(weight_hh_rev))
+                    setattr(self.gru, 'weight_ih_l%d_reverse' % i,
+                            torch.nn.Parameter(weight_ih_rev))
 
         outputs, hidden = self.gru(embs, hidden)
         final_hidden = outputs[-1]
