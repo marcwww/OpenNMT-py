@@ -15,7 +15,6 @@ from onmt.utils import optimizers
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
-SAVE_PER = 5
 
 class Avg(nn.Module):
 
@@ -174,9 +173,6 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     loss = criterion(probs, lbl)
     loss.backward()
-    # print(sum-param_sum(model.parameters()),sum,param_sum(model.parameters()))
-    # sum=param_sum(model.parameters())
-    # clip_grads(model)
     optim.step()
 
     return loss
@@ -205,6 +201,7 @@ def train(train_iter, val_iter, epoch, model,
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
+    save_per = epoch['save_per']
 
     # valid(val_iter,model)
 
@@ -228,7 +225,7 @@ def train(train_iter, val_iter, epoch, model,
         recalls.extend([recall for _ in range(nbatch)])
         f1s.append([f1 for _ in range(nbatch)])
 
-        if (epoch+1) % SAVE_PER == 0:
+        if (epoch+1) % save_per == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter, model):
@@ -349,7 +346,8 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model, opt, None)
     criterion = nn.BCELoss(size_average=True)
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
-             'end': 10000}
+             'end': 10000,
+             'save_per': opt.save_per}
 
     train(train_iter, valid_iter, epoch,
           model, optim, criterion, opt, cweights)
