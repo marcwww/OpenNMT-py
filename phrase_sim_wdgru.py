@@ -75,7 +75,7 @@ class PhraseSim(nn.Module):
 class Encoder(nn.Module):
 
     def __init__(self, voc_size, hdim, padding_idx,
-                 n_layers=1, dropout=0.5, bidirection=True):
+                 n_layers=1, dropout=0.5, bidirection=False):
         super(Encoder, self).__init__()
         self.hdim = hdim
         self.embedding = nn.Embedding(voc_size,
@@ -90,23 +90,26 @@ class Encoder(nn.Module):
         self.dropout_prob = dropout
         self.bidirection = bidirection
 
-        for i in range(self.n_layers):
-            weight_hh = getattr(self.gru, 'weight_hh_l%d' % i)
-            weight_ih = getattr(self.gru, 'weight_ih_l%d' % i)
-            self.gru.register_buffer('weight_hh_l%d_raw' % i, weight_hh)
-            self.gru.register_buffer('weight_ih_l%d_raw' % i, weight_ih)
+        self.weight_hh = nn.Parameter(self.gru.weight_hh_l0)
+        self.weight_ih = nn.Parameter(self.gru.weight_ih_l0)
 
-            if self.bidirection:
-                weight_hh_rev = getattr(self.gru, 'weight_hh_l%d_reverse' % i)
-                weight_ih_rev = getattr(self.gru, 'weight_ih_l%d_reverse' % i)
-                self.gru.register_buffer('weight_hh_l%d_reverse_raw' % i,
-                                         weight_hh_rev)
-                self.gru.register_buffer('weight_ih_l%d_reverse_raw' % i,
-                                         weight_ih_rev)
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         # embs = self.dropout(embs)
+        if self.training:
+            mask_hh = self.weight_hh.clone().bernoulli_(1-self.dropout_prob)
+            mask_ih = self.weight_ih.clone().bernoulli_(1-self.dropout_prob)
+            setattr(self.gru, 'weight_hh_l0',
+                    torch.nn.Parameter(self.weight_hh * mask_hh))
+            setattr(self.gru, 'weight_ih_l0',
+                    torch.nn.Parameter(self.weight_ih * mask_ih))
+        else:
+            setattr(self.gru, 'weight_hh_l0',
+                    torch.nn.Parameter(self.weight_hh))
+            setattr(self.gru, 'weight_ih_l0',
+                    torch.nn.Parameter(self.weight_ih))
+
         # if self.training:
         #     for i in range(self.n_layers):
         #         weight_hh = getattr(self.gru, 'weight_hh_l%d_raw' % i)
