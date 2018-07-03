@@ -56,6 +56,10 @@ class PhraseSim(nn.Module):
             nn.Linear(1*encoder.odim, 2),
             nn.Softmax())
         self.dropout = nn.Dropout(dropout)
+        self.W_dis = nn.\
+            Parameter(torch.
+                      Tensor(encoder.odim,
+                             encoder.embedding.embedding_dim))
 
 
     def forward(self, seq1, seq2):
@@ -70,8 +74,8 @@ class PhraseSim(nn.Module):
 
         probs = self.generator(cat_res)
         we_T = encoder.embedding.weight.transpose(0, 1)
-        logits1 = torch.matmul(outputs1, we_T)
-        logits2 = torch.matmul(outputs2, we_T)
+        logits1 = torch.matmul(outputs1, self.W_dis.matmul(we_T))
+        logits2 = torch.matmul(outputs2, self.W_dis.matmul(we_T))
 
         return probs, logits1, logits2
 
