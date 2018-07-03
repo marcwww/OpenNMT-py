@@ -49,6 +49,7 @@ class PhraseSim(nn.Module):
         self.generator = nn.Sequential(
             nn.Linear(encoder.odim, 1),
             nn.Sigmoid())
+        self.l1_dis = torch.nn.PairwiseDistance(p=1)
 
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
@@ -57,7 +58,7 @@ class PhraseSim(nn.Module):
         _, hidden1 = self.encoder(seq1)
         _, hidden2 = self.encoder(seq2)
 
-        probs = self.generator(hidden1 + hidden2)
+        probs = self.generator(torch.exp(self.l1(hidden1, hidden2)))
 
         return probs
 
