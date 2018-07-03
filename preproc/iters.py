@@ -11,8 +11,8 @@ BOS_WORD = '<s>'
 EOS_WORD = '<e>'
 SEG_WORD = '<seg>'
 
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
 
@@ -31,7 +31,10 @@ def tokenizer_char(txt):
     # if txt.find('***') !=-1 :
     #     print('***')
     txt = re.sub('\*\*\*', '*', txt)
-    return [w for w in list(txt) if w not in STOP_WORDS]
+    res = [w for w in list(txt) if w not in STOP_WORDS]
+    with open('res.txt','a+') as f:
+        f.write(' '.join(res).encode('utf-8')+'\n')
+    return res
 
 def tokenizer_charNword(txt):
     res = []
@@ -121,6 +124,6 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
     return TEXT, LABEL, train_iter, valid_iter
 
 if __name__ == '__main__':
-    TEXT, LABEL, train_iter, valid_iter = build_iters(level='charNword')
-    for sample in train_iter:
-        print(sample.seq1)
+    TEXT, LABEL, train_iter, valid_iter = build_iters(level='char')
+    # for sample in train_iter:
+    #     print(sample.seq1)

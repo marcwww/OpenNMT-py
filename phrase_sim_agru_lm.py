@@ -72,8 +72,8 @@ class PhraseSim(nn.Module):
         cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
-        we_T = encoder.embedding.weight.transpose(0, 1)
-        if encoder.bidirection:
+        we_T = self.encoder.embedding.weight.transpose(0, 1)
+        if self.encoder.bidirection:
             we_T = torch.stack([we_T, we_T], dim=0).\
                 view(-1, self.encoder.embedding.num_embeddings)
 
