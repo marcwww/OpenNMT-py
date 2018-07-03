@@ -40,16 +40,21 @@ class MultiWay(nn.Module):
         # return torch.cat([way1,way2,way3,way4],dim=1)
         return torch.cat([way3,way4,way5],dim=1)
 
-
 class PhraseSim(nn.Module):
 
     def __init__(self, encoder, dropout):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
+        self.avg = Avg()
+        self.MultiWay =MultiWay()
         self.generator = nn.Sequential(
-            nn.Linear(encoder.odim, 1),
-            nn.Sigmoid())
-        self.l1_dis = torch.nn.PairwiseDistance(p=1)
+            nn.Linear(self.MultiWay.nways * encoder.odim,
+                      1 * encoder.odim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(1*encoder.odim,1),
+            nn.PairwiseDistance(p=1))
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
@@ -58,7 +63,10 @@ class PhraseSim(nn.Module):
         _, hidden1 = self.encoder(seq1)
         _, hidden2 = self.encoder(seq2)
 
-        probs = self.generator(torch.exp(self.l1_dis(hidden1, hidden2)))
+        cat_res = self.MultiWay(hidden1,hidden2)
+        cat_res = self.dropout(cat_res)
+
+        probs = self.generator(cat_res)
 
         return probs
 
