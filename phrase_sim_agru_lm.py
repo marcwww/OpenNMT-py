@@ -100,6 +100,7 @@ class Encoder(nn.Module):
         self.embedding = nn.Embedding(voc_size,
                                       hdim,
                                       padding_idx=padding_idx)
+        self.padding_idx = padding_idx
         self.n_layers = n_layers
         self.gru = nn.GRU(hdim, hdim, n_layers,
                           dropout, bidirectional=bidirection)
@@ -109,6 +110,10 @@ class Encoder(nn.Module):
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
+        mask = inputs.data.eq(self.padding_idx)
+        mask = mask.unsqueeze(-1).expand_as(embs)
+        embs.masked_fill_(mask, 0)
+
         embs = self.dropout(embs)
 
         outputs, hidden = self.gru(embs, hidden)
@@ -161,17 +166,19 @@ def train_batch(sample, model, criterion, optim, class_weight, lm_coef):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
+    tar1 = seq1[1:]
+    tar2 = seq2[1:]
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
-    probs, logits1, logits2 = model(seq1, seq2)
+    probs, logits1, logits2 = model(seq1[:-1], seq2[:-1])
     voc_size = model.encoder.embedding.num_embeddings
     # decoder_outputs : (1,bsz,hdim)
     # probs : (bsz)
 
     loss_ps = criterion['ps'](probs, lbl)
-    loss_lm1 = criterion['lm'](logits1[:-1].view(-1, voc_size), seq1[1:].view(-1))
-    loss_lm2 = criterion['lm'](logits2[:-1].view(-1, voc_size), seq2[1:].view(-1))
+    loss_lm1 = criterion['lm'](logits1.view(-1, voc_size), tar1.view(-1))
+    loss_lm2 = criterion['lm'](logits2.view(-1, voc_size), tar2.view(-1))
     loss = (loss_ps + lm_coef * (loss_lm1+loss_lm2)/2)/2
     loss.backward()
     optim.step()
