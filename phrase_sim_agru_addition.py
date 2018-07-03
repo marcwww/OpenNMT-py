@@ -58,7 +58,7 @@ class PhraseSim(nn.Module):
         _, hidden1 = self.encoder(seq1)
         _, hidden2 = self.encoder(seq2)
 
-        probs = self.generator(torch.exp(self.l1(hidden1, hidden2)))
+        probs = self.generator(torch.exp(self.l1_dis(hidden1, hidden2)))
 
         return probs
 
