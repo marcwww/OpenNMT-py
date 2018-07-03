@@ -348,7 +348,7 @@ if __name__ == '__main__':
     optim = optimizers.build_optim(model, opt, None)
     weight = torch.Tensor([cweights['wneg'], cweights['wpos']]).to(device)
     criterion_ps = nn.CrossEntropyLoss(weight=weight)
-    criterion_lm = nn.CrossEntropyLoss()
+    criterion_lm = nn.CrossEntropyLoss(ignore_index=TEXT.vocab.stoi[iters.PAD_WORD])
     criterion = {'ps': criterion_ps,
                  'lm': criterion_lm}
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
