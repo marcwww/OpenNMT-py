@@ -57,9 +57,8 @@ class PhraseSim(nn.Module):
             nn.Softmax())
         self.dropout = nn.Dropout(dropout)
         self.W_dis = nn.\
-            Parameter(torch.
-                      Tensor(encoder.odim,
-                             encoder.embedding.embedding_dim))
+            Parameter(torch.Tensor(encoder.odim,
+                                   encoder.odim))
 
 
     def forward(self, seq1, seq2):
@@ -74,6 +73,10 @@ class PhraseSim(nn.Module):
 
         probs = self.generator(cat_res)
         we_T = encoder.embedding.weight.transpose(0, 1)
+        if encoder.bidirection:
+            we_T = torch.stack([we_T, we_T], dim=0).\
+                view(-1, self.encoder.embedding.num_embeddings)
+
         logits1 = torch.matmul(outputs1, self.W_dis.matmul(we_T))
         logits2 = torch.matmul(outputs2, self.W_dis.matmul(we_T))
 
@@ -106,6 +109,7 @@ class Encoder(nn.Module):
                                       padding_idx=padding_idx)
         self.padding_idx = padding_idx
         self.n_layers = n_layers
+        self.bidirection = bidirection
         self.gru = nn.GRU(hdim, hdim, n_layers,
                           dropout, bidirectional=bidirection)
         self.odim = hdim * 2 if bidirection else hdim
@@ -183,7 +187,7 @@ def train_batch(sample, model, criterion, optim, class_weight, lm_coef):
     loss_ps = criterion['ps'](probs, lbl)
     loss_lm1 = criterion['lm'](logits1.view(-1, voc_size), tar1.view(-1))
     loss_lm2 = criterion['lm'](logits2.view(-1, voc_size), tar2.view(-1))
-    loss = (loss_ps + lm_coef * (loss_lm1+loss_lm2)/2)/2
+    loss = (loss_ps + lm_coef * (loss_lm1+loss_lm2)/2)/(1+lm_coef)
     loss.backward()
     optim.step()
 
