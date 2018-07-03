@@ -40,6 +40,7 @@ class MultiWay(nn.Module):
         # return torch.cat([way1,way2,way3,way4],dim=1)
         return torch.cat([way3,way4,way5],dim=1)
 
+
 class PhraseSim(nn.Module):
 
     def __init__(self, encoder, dropout):
@@ -52,23 +53,27 @@ class PhraseSim(nn.Module):
                       1 * encoder.odim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(1*encoder.odim,1),
-            nn.PairwiseDistance(p=1))
+            nn.Linear(1*encoder.odim, 2),
+            nn.Softmax())
         self.dropout = nn.Dropout(dropout)
+
 
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
         # seq2 = seq2.unsqueeze(2)
 
-        _, hidden1 = self.encoder(seq1)
-        _, hidden2 = self.encoder(seq2)
+        outputs1, hidden1 = self.encoder(seq1)
+        outputs2, hidden2 = self.encoder(seq2)
 
         cat_res = self.MultiWay(hidden1,hidden2)
         cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
+        we_T = encoder.embedding.weight.transpose(0, 1)
+        logits1 = torch.matmul(outputs1, we_T)
+        logits2 = torch.matmul(outputs2, we_T)
 
-        return probs
+        return probs, logits1, logits2
 
 class Attention(nn.Module):
 
@@ -146,7 +151,7 @@ def save_checkpoint(model, epoch,
     }
     open(train_fname, 'wt').write(json.dumps(content))
 
-def train_batch(sample, model, criterion, optim, class_weight):
+def train_batch(sample, model, criterion, optim, class_weight, lm_coef):
     model.train()
 
     model.zero_grad()
@@ -156,21 +161,18 @@ def train_batch(sample, model, criterion, optim, class_weight):
 
     seq1 = seq1.to(device)
     seq2 = seq2.to(device)
-    lbl = lbl.type(torch.FloatTensor)
-
-    bs_weight = lbl.clone().\
-        apply_(lambda x:class_weight['wneg'] if x == 0 else class_weight['wpos'])
-
-    criterion.weight = bs_weight.to(device)
-
     lbl = lbl.to(device)
     # seq : (seq_len,bsz)
     # lbl : (bsz)
-    probs = model(seq1, seq2)
+    probs, logits1, logits2 = model(seq1, seq2)
+    voc_size = model.encoder.embedding.num_embeddings
     # decoder_outputs : (1,bsz,hdim)
     # probs : (bsz)
 
-    loss = criterion(probs, lbl)
+    loss_ps = criterion['ps'](probs, lbl)
+    loss_lm1 = criterion['lm'](logits1[:-1].view(-1, voc_size), seq1[1:].view(-1))
+    loss_lm2 = criterion['lm'](logits2[:-1].view(-1, voc_size), seq2[1:].view(-1))
+    loss = (loss_ps + lm_coef * (loss_lm1+loss_lm2)/2)/2
     loss.backward()
     optim.step()
 
@@ -209,7 +211,8 @@ def train(train_iter, val_iter, epoch, model,
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim,class_weight)
+            loss = train_batch(sample,model,criterion,optim,
+                               class_weight,opt.lm_coef)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -244,9 +247,9 @@ def valid(val_iter, model):
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
-            probs = model(seq1, seq2)
+            probs, _, _ = model(seq1, seq2)
             # probs : (bsz)
-            pred = probs.cpu().apply_(lambda x: 0 if x < 0.5 else 1)
+            pred = probs.max(dim=1)[1].cpu()
             pred_lst.extend(pred.numpy())
             lbl_lst.extend(lbl.numpy())
 
@@ -313,7 +316,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     TEXT, LALEBL, train_iter, valid_iter = \
-        iters.build_iters(ftrain=opt.ftrain, fvalid=opt.fvalid,
+        iters.build_iters_lm(ftrain=opt.ftrain, fvalid=opt.fvalid,
                           bsz=opt.batch_size, level=opt.level)
 
     class_probs = dataset_bias(train_iter)
@@ -343,7 +346,11 @@ if __name__ == '__main__':
 
     # model.generator = generator.to(device)
     optim = optimizers.build_optim(model, opt, None)
-    criterion = nn.BCELoss(size_average=True)
+    weight = torch.Tensor([cweights['wneg'], cweights['wpos']]).to(device)
+    criterion_ps = nn.CrossEntropyLoss(weight=weight)
+    criterion_lm = nn.CrossEntropyLoss()
+    criterion = {'ps': criterion_ps,
+                 'lm': criterion_lm}
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
              'end': 10000,
              'save_per': opt.save_per}

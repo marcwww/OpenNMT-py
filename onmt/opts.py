@@ -222,6 +222,8 @@ def train_opts(parser):
     group.add_argument('-fvalid', default='atec_valid.txt.back', type=str)
     group.add_argument('-save_per', default=5, type=int)
 
+    group.add_argument('-lm_coef', default=0.5, type=float)
+
     group.add_argument('-save_model', default='model',
                        help="""Model filename (the model will be saved as
                        <save_model>_N.pt where N is the number
