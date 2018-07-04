@@ -126,7 +126,7 @@ class Encoder(nn.Module):
 
         outputs, hidden = self.gru(embs, hidden)
         mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
-        outputs_masked = outputs.masked_fill_(mask_hiddens, 0)
+        outputs_masked = outputs.clone().masked_fill_(mask_hiddens, 0)
         final_hidden = self.attention(outputs_masked)
 
         return outputs_masked, final_hidden
