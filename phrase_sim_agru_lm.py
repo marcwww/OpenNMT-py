@@ -237,8 +237,8 @@ def train(train_iter, val_iter, epoch, model,
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
               (accurracy, precision, recall, f1, loss_mean))
         accurs.append(accurracy)
-        precs.extend(precision)
-        recalls.extend(recall)
+        precs.append(precision)
+        recalls.append(recall)
         f1s.append(f1)
 
         if (epoch+1) % save_per == 0:
