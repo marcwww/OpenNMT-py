@@ -142,8 +142,8 @@ class Encoder(nn.Module):
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         mask = inputs.data.eq(self.padding_idx)
-        # mask_embs = mask.unsqueeze(-1).expand_as(embs)
-        # embs.masked_fill_(mask_embs, 0)
+        mask_embs = mask.unsqueeze(-1).expand_as(embs)
+        embs.masked_fill_(mask_embs, 0)
 
         embs = self.dropout(embs)
         outputs, hidden = self.gru(embs, hidden)
