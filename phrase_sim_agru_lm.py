@@ -119,15 +119,15 @@ class Encoder(nn.Module):
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         mask = inputs.data.eq(self.padding_idx)
-        mask = mask.unsqueeze(-1).expand_as(embs)
-        embs.masked_fill_(mask, 0)
+        mask_embs = mask.unsqueeze(-1).expand_as(embs)
+        embs.masked_fill_(mask_embs, 0)
 
         embs = self.dropout(embs)
 
         outputs, hidden = self.gru(embs, hidden)
-        final_hidden = self.attention(outputs)
         mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
         outputs_masked = outputs.masked_fill_(mask_hiddens, 0)
+        final_hidden = self.attention(outputs_masked)
 
         return outputs_masked, final_hidden
 
