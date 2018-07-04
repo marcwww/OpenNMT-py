@@ -148,7 +148,7 @@ class Encoder(nn.Module):
         embs = self.dropout(embs)
         outputs, hidden = self.gru(embs, hidden)
         mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
-        outputs.masked_fill_(mask_hiddens, 0)
+        outputs = outputs.clone().masked_fill_(mask_hiddens, 0)
 
         return outputs, hidden
 
