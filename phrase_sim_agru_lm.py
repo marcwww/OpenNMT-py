@@ -126,8 +126,10 @@ class Encoder(nn.Module):
 
         outputs, hidden = self.gru(embs, hidden)
         final_hidden = self.attention(outputs)
+        mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
+        outputs_masked = outputs.masked_fill_(mask_hiddens, 0)
 
-        return outputs, final_hidden
+        return outputs_masked, final_hidden
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
