@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'agru-epoch-839.json'
+fname = 'agru_lm_full-epoch-74.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
@@ -40,8 +40,8 @@ print(np.where(f1 == np.max(f1)), np.max(f1))
 print("Training history (seed x metric x sequence) =", training.shape)
 
 # Average every dv values across each (seed, metric)
-l = int(len(training)/1000)
-dv = 1000
+dv = 1
+l = int(len(training)/dv)
 training_mean = training[:l*dv].reshape(-1, dv).mean(axis=1)
 f1_mean = f1[:l*dv].reshape(-1, dv).mean(axis=1)
 training_std = training[:l*dv].reshape(-1, dv).std(axis=1)
@@ -62,11 +62,11 @@ plt.errorbar(x, f1_mean, fmt='x-', elinewidth=1, linewidth=1, label='f1')
 # print(training_mean)
 # plt.errorbar(x, training_mean[3], yerr=training_std[3], fmt='r-', elinewidth=2, linewidth=2, label='Accur')
 plt.grid()
-plt.xticks(np.arange(0, 100, 20))
+plt.xticks(np.arange(0, 100, 5))
 plt.yticks(np.arange(0, 2, 0.1))
 plt.ylabel('Loss with standard deviation')
-plt.xlabel('Batches (thousands)')
-plt.title('Training Convergence', fontsize=16)
+plt.xlabel('Epoch')
+plt.title('Loss vs. valid F1', fontsize=16)
 
 plt.show()
 
