@@ -54,8 +54,8 @@ class PhraseSim(nn.Module):
                       1 * encoder.odim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(1*encoder.odim, 2),
-            nn.Softmax())
+            nn.Linear(1*encoder.odim, 2))
+            # nn.Softmax())
         self.dropout = nn.Dropout(dropout)
         self.W_dis = nn.\
             Parameter(torch.Tensor(encoder.odim,
