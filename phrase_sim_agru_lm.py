@@ -54,8 +54,8 @@ class PhraseSim(nn.Module):
                       1 * encoder.odim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(1*encoder.odim, 2))
-            # nn.Softmax())
+            nn.Linear(1*encoder.odim, 2),
+            nn.Softmax())
         self.dropout = nn.Dropout(dropout)
         self.W_dis = nn.\
             Parameter(torch.Tensor(encoder.odim,
@@ -209,6 +209,7 @@ def train(train_iter, val_iter, epoch, model,
     f1s=[]
     precs=[]
     recalls=[]
+    losses_log=[]
 
     if opt.load_idx != -1:
         losses,accurs,\
@@ -240,9 +241,10 @@ def train(train_iter, val_iter, epoch, model,
         precs.append(precision)
         recalls.append(recall)
         f1s.append(f1)
+        losses_log.append(loss_mean)
 
         if (epoch+1) % save_per == 0:
-            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
+            save_checkpoint(model,epoch,losses_log,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter, model):
     model.eval()
