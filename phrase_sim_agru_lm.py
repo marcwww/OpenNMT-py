@@ -328,7 +328,7 @@ if __name__ == '__main__':
     opts.train_opts(parser)
     opt = parser.parse_args()
     with open('%s.arg' % opt.exp, 'w') as f:
-        f.write('\n'.join(sys.argv[1:]))
+        f.write(' '.join(sys.argv[1:]))
 
     TEXT, LALEBL, train_iter, valid_iter = \
         iters.build_iters_lm(ftrain=opt.ftrain, fvalid=opt.fvalid,
