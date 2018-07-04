@@ -60,7 +60,6 @@ class PhraseSim(nn.Module):
             Parameter(torch.Tensor(encoder.odim,
                                    encoder.odim))
 
-
     def forward(self, seq1, seq2):
         # seq1 = seq1.unsqueeze(2)
         # seq2 = seq2.unsqueeze(2)
