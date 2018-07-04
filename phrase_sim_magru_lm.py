@@ -134,19 +134,21 @@ class Encoder(nn.Module):
         self.n_layers = n_layers
         self.bidirection = bidirection
         self.gru = nn.GRU(hdim, hdim, n_layers,
-                          dropout, bidirectional=bidirection)
+                          dropout=dropout,
+                          bidirectional=bidirection)
         self.odim = hdim * 2 if bidirection else hdim
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         mask = inputs.data.eq(self.padding_idx)
-        mask = mask.unsqueeze(-1).expand_as(embs)
-        embs.masked_fill_(mask, 0)
+        # mask_embs = mask.unsqueeze(-1).expand_as(embs)
+        # embs.masked_fill_(mask_embs, 0)
 
         embs = self.dropout(embs)
-
         outputs, hidden = self.gru(embs, hidden)
+        mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
+        outputs.masked_fill_(mask_hiddens, 0)
 
         return outputs, hidden
 
