@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'agru_lm_full-epoch-74.json'
+fname = 'agru_lm_coef_preproc-epoch-74.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
@@ -36,6 +36,7 @@ print(np.max(f1))
 f1 = f1.reshape(-1)
 
 print(np.where(f1 == np.max(f1)), np.max(f1))
+print(np.where(f1 >= 0.60))
 
 print("Training history (seed x metric x sequence) =", training.shape)
 
