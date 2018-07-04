@@ -30,27 +30,26 @@ def tokenizer_word(txt):
 
 def tokenizer_char(txt):
 
-    # def seg_zh(matched):
-    #     begin, end = matched.regs[0]
-    #     phrase = matched.string[begin:end]
-    #     return ' '.join(list(phrase))
-    #
-    # def match_en(matched):
-    #     begin, end = matched.regs[0]
-    #     word = matched.string[begin:end]
-    #     if len(word)>1:
-    #         return ' '+word+' '
-    #     else:
-    #         return ''
-    #
-    # txt = re.sub(u'[!“\"#$%&\'()+,-./:;<=>?@[\]^_`{|}~，。！？、【】「」～☆]+', '', txt)
-    # txt = re.sub(u'[0-9]+\*+[0-9]+|[0-9]+|\*\*\*', ' num ', txt)
-    # txt = re.sub(u'[a-zA-z]+', match_en, txt)
-    # txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
-    # txt = re.sub('\s+', ' ', txt)
-    # res = txt.split(' ')
-    # return res
-    return list(txt)
+    def seg_zh(matched):
+        begin, end = matched.regs[0]
+        phrase = matched.string[begin:end]
+        return ' '.join(list(phrase))
+
+    def match_en(matched):
+        begin, end = matched.regs[0]
+        word = matched.string[begin:end]
+        if len(word)>1:
+            return ' '+word+' '
+        else:
+            return ''
+
+    txt = re.sub(u'[!“\"#$%&\'()+,-./:;<=>?@[\]^_`{|}~，。！？、【】「」～☆]+', '', txt)
+    txt = re.sub(u'[0-9]+\*+[0-9]+|[0-9]+|\*\*\*', ' num ', txt)
+    txt = re.sub(u'[a-zA-z]+', match_en, txt)
+    txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
+    txt = re.sub('\s+', ' ', txt)
+    res = txt.split(' ')
+    return res
 
 def tokenizer_charNword(txt):
     res = []
