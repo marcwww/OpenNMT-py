@@ -12,6 +12,7 @@ from sklearn import metrics
 import logging
 import numpy as np
 from onmt.utils import optimizers
+import sys
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
@@ -202,7 +203,7 @@ def restore_log(opt):
 
 def train(train_iter, val_iter, epoch, model,
           optim, criterion, opt, class_weight):
-    # sum=param_sum(model.parameters())
+
     losses=[]
     accurs=[]
     f1s=[]
@@ -218,8 +219,6 @@ def train(train_iter, val_iter, epoch, model,
     epoch_end = epoch['end']
     save_per = epoch['save_per']
 
-    # valid(val_iter,model)
-
     for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
@@ -234,12 +233,13 @@ def train(train_iter, val_iter, epoch, model,
             progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
+        loss_mean = np.array(losses[-nbatch:]).mean()
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
-              (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
-        accurs.extend([accurracy for _ in range(nbatch)])
-        precs.extend([precision for _ in range(nbatch)])
-        recalls.extend([recall for _ in range(nbatch)])
-        f1s.append([f1 for _ in range(nbatch)])
+              (accurracy, precision, recall, f1, loss_mean))
+        accurs.append(accurracy)
+        precs.extend(precision)
+        recalls.extend(recall)
+        f1s.append(f1)
 
         if (epoch+1) % save_per == 0:
             save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
@@ -326,8 +326,9 @@ if __name__ == '__main__':
     opts.add_md_help_argument(parser)
     opts.model_opts(parser)
     opts.train_opts(parser)
-
     opt = parser.parse_args()
+    with open('%s.arg' % opt.exp, 'w') as f:
+        f.write('\n'.join(sys.argv[1:]))
 
     TEXT, LALEBL, train_iter, valid_iter = \
         iters.build_iters_lm(ftrain=opt.ftrain, fvalid=opt.fvalid,

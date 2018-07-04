@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'agru_lm-epoch-39.json'
+fname = 'agru-epoch-839.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
@@ -63,7 +63,7 @@ plt.errorbar(x, f1_mean, fmt='x-', elinewidth=1, linewidth=1, label='f1')
 # plt.errorbar(x, training_mean[3], yerr=training_std[3], fmt='r-', elinewidth=2, linewidth=2, label='Accur')
 plt.grid()
 plt.xticks(np.arange(0, 100, 20))
-plt.yticks(np.arange(0, 1, 0.05))
+plt.yticks(np.arange(0, 2, 0.1))
 plt.ylabel('Loss with standard deviation')
 plt.xlabel('Batches (thousands)')
 plt.title('Training Convergence', fontsize=16)
