@@ -52,8 +52,7 @@ class PhraseSim(nn.Module):
         self.MultiWay =MultiWay()
         self.generator = nn.Sequential(
             nn.Linear(k, k),
-            nn.ReLU(),
-            nn.Dropout(dropout),
+            nn.Tanh(),
             nn.Linear(k, 2),
             nn.Softmax(dim = -1))
         self.dropout = nn.Dropout(dropout)
