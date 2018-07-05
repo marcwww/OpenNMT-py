@@ -91,15 +91,12 @@ class Attention(nn.Module):
         self.generator = nn.Sequential(
             nn.Linear(hdim, hdim),
             nn.Tanh(),
-            nn.Linear(hdim, 1)
+            nn.Linear(hdim, 1),
+            nn.Softmax(dim=0)
         )
-        self.softmax = nn.Softmax(dim=0)
 
     def forward(self, inputs, mask):
-        mask_a_raw = mask.unsqueeze(-1)
-        a_raw = self.generator(inputs)
-        a_raw.masked_fill_(mask_a_raw, -float('inf'))
-        a = self.softmax(a_raw)
+        a = self.generator(inputs)
         return (inputs * a).sum(dim=0)
 
 class Encoder(nn.Module):
@@ -130,11 +127,9 @@ class Encoder(nn.Module):
         embs = self.dropout(embs)
 
         outputs, hidden = self.gru(embs, hidden)
-        mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
-        outputs_masked = outputs.clone().masked_fill_(mask_hiddens, 0)
-        final_hidden = self.attention(outputs_masked, mask)
+        final_hidden = self.attention(outputs, mask)
 
-        return outputs_masked, final_hidden
+        return outputs, final_hidden
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
