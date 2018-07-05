@@ -266,7 +266,7 @@ def valid(val_iter, model):
 
             # seq : (seq_len,bsz)
             # lbl : (bsz)
-            probs, _, _ = model(seq1, seq2)
+            probs = model(seq1, seq2)
             # probs : (bsz)
             pred = probs.max(dim=1)[1].cpu()
             pred_lst.extend(pred.numpy())
