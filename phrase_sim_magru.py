@@ -52,7 +52,7 @@ class PhraseSim(nn.Module):
         self.MultiWay =MultiWay()
         self.generator = nn.Sequential(
             nn.Linear(k, k),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(k, 2),
             nn.Softmax(dim = -1))
         self.dropout = nn.Dropout(dropout)
@@ -77,7 +77,7 @@ class MutualAttention(nn.Module):
         self.hdim = hdim
         self.generator = nn.Sequential(
             nn.Linear(hdim, hdim),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(hdim, 1),
             nn.Softmax(dim=0)
         )
