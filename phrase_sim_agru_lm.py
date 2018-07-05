@@ -90,12 +90,15 @@ class Attention(nn.Module):
         self.generator = nn.Sequential(
             nn.Linear(hdim, hdim),
             nn.Tanh(),
-            nn.Linear(hdim, 1),
-            nn.Softmax(dim=0)
+            nn.Linear(hdim, 1)
         )
+        self.softmax = nn.Softmax(dim=0)
 
-    def forward(self, inputs):
-        a = self.generator(inputs)
+    def forward(self, inputs, mask):
+        mask_a_raw = mask.unsqueeze(-1)
+        a_raw = self.generator(inputs)
+        a_raw.masked_fill_(mask_a_raw, 0)
+        a = self.softmax(a_raw)
         return (inputs * a).sum(dim=0)
 
 class Encoder(nn.Module):
@@ -127,7 +130,7 @@ class Encoder(nn.Module):
         outputs, hidden = self.gru(embs, hidden)
         mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
         outputs_masked = outputs.clone().masked_fill_(mask_hiddens, 0)
-        final_hidden = self.attention(outputs_masked)
+        final_hidden = self.attention(outputs_masked, mask)
 
         return outputs_masked, final_hidden
 

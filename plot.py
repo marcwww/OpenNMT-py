@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'agru_lm_coef_preproc-epoch-74.json'
+fname = 'masked-epoch-99.json'
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files
