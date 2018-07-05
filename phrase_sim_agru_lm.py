@@ -6,6 +6,7 @@ from torch import nn
 import torch
 import json
 from preproc.iters import PAD_WORD
+from preproc.iters import EOS_WORD
 from torch.nn.init import xavier_uniform_
 import sklearn
 from sklearn import metrics
@@ -103,7 +104,7 @@ class Attention(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, voc_size, hdim, padding_idx,
+    def __init__(self, voc_size, hdim, padding_idx, eos_idx,
                  n_layers=1, dropout=0.5, bidirection=False):
         super(Encoder, self).__init__()
         self.hdim = hdim
@@ -111,6 +112,7 @@ class Encoder(nn.Module):
                                       hdim,
                                       padding_idx=padding_idx)
         self.padding_idx = padding_idx
+        self.eos_idx = eos_idx
         self.n_layers = n_layers
         self.bidirection = bidirection
         self.gru = nn.GRU(hdim, hdim, n_layers,
@@ -121,7 +123,7 @@ class Encoder(nn.Module):
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
-        mask = inputs.data.eq(self.padding_idx)
+        mask = inputs.data.eq(self.padding_idx) + inputs.data.eq(self.eos_idx)
         mask_embs = mask.unsqueeze(-1).expand_as(embs)
         embs.masked_fill_(mask_embs, 0)
 
@@ -351,6 +353,7 @@ if __name__ == '__main__':
     encoder = Encoder(len(TEXT.vocab.stoi),
                       opt.rnn_size,
                       TEXT.vocab.stoi[PAD_WORD],
+                      TEXT.vocab.stoi[EOS_WORD],
                       opt.enc_layers,
                       opt.dropout,
                       opt.bidirection)
