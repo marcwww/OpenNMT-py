@@ -6,7 +6,6 @@ from torch import nn
 import torch
 import json
 from preproc.iters import PAD_WORD
-from preproc.iters import EOS_WORD
 from torch.nn.init import xavier_uniform_
 import sklearn
 from sklearn import metrics
@@ -69,7 +68,7 @@ class PhraseSim(nn.Module):
         outputs1, hidden1 = self.encoder(seq1)
         outputs2, hidden2 = self.encoder(seq2)
 
-        cat_res = self.MultiWay(hidden1, hidden2)
+        cat_res = self.MultiWay(hidden1,hidden2)
         cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
@@ -95,13 +94,13 @@ class Attention(nn.Module):
             nn.Softmax(dim=0)
         )
 
-    def forward(self, inputs, mask):
+    def forward(self, inputs):
         a = self.generator(inputs)
         return (inputs * a).sum(dim=0)
 
 class Encoder(nn.Module):
 
-    def __init__(self, voc_size, hdim, padding_idx, eos_idx,
+    def __init__(self, voc_size, hdim, padding_idx,
                  n_layers=1, dropout=0.5, bidirection=False):
         super(Encoder, self).__init__()
         self.hdim = hdim
@@ -109,7 +108,6 @@ class Encoder(nn.Module):
                                       hdim,
                                       padding_idx=padding_idx)
         self.padding_idx = padding_idx
-        self.eos_idx = eos_idx
         self.n_layers = n_layers
         self.bidirection = bidirection
         self.gru = nn.GRU(hdim, hdim, n_layers,
@@ -120,14 +118,14 @@ class Encoder(nn.Module):
 
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
-        mask = inputs.data.eq(self.padding_idx) + inputs.data.eq(self.eos_idx)
-        mask_embs = mask.unsqueeze(-1).expand_as(embs)
-        embs.masked_fill_(mask_embs, 0)
+        mask = inputs.data.eq(self.padding_idx)
+        mask = mask.unsqueeze(-1).expand_as(embs)
+        embs.masked_fill_(mask, 0)
 
         embs = self.dropout(embs)
 
         outputs, hidden = self.gru(embs, hidden)
-        final_hidden = self.attention(outputs, mask)
+        final_hidden = self.attention(outputs)
 
         return outputs, final_hidden
 
@@ -348,7 +346,6 @@ if __name__ == '__main__':
     encoder = Encoder(len(TEXT.vocab.stoi),
                       opt.rnn_size,
                       TEXT.vocab.stoi[PAD_WORD],
-                      TEXT.vocab.stoi[EOS_WORD],
                       opt.enc_layers,
                       opt.dropout,
                       opt.bidirection)
@@ -372,7 +369,7 @@ if __name__ == '__main__':
     criterion = {'ps': criterion_ps,
                  'lm': criterion_lm}
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
-             'end': opt.nepoch,
+             'end': 10000,
              'save_per': opt.save_per}
 
     train(train_iter, valid_iter, epoch,
