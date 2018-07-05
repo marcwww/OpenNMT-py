@@ -43,7 +43,7 @@ def tokenizer_char(txt):
         else:
             return ''
 
-    txt = re.sub(u'[!“\"#$%&\'()+,-./:;<=>?@[\]^_`{|}~，。！？、【】「」～☆]+', '', txt)
+    txt = re.sub(u'[!“\"#$%&\'()+,-./:;<=>?@[\]^_`{|}~，。！？、【】「」～]+', '', txt)
     txt = re.sub(u'[0-9]+\*+[0-9]+|[0-9]+|\*\*\*', ' num ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)

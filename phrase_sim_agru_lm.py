@@ -69,7 +69,7 @@ class PhraseSim(nn.Module):
         outputs1, hidden1 = self.encoder(seq1)
         outputs2, hidden2 = self.encoder(seq2)
 
-        cat_res = self.MultiWay(hidden1,hidden2)
+        cat_res = self.MultiWay(hidden1, hidden2)
         cat_res = self.dropout(cat_res)
 
         probs = self.generator(cat_res)
