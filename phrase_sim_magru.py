@@ -55,7 +55,7 @@ class PhraseSim(nn.Module):
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(k, 2),
-            nn.Softmax())
+            nn.Softmax(dim = -1))
         self.dropout = nn.Dropout(dropout)
         self.k = k
         self.mutual_attention = \
