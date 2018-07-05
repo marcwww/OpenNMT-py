@@ -82,7 +82,6 @@ class MutualAttention(nn.Module):
             nn.Softmax(dim=0)
         )
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
-        self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
 
     def forward(self, inputs1, inputs2):
@@ -91,8 +90,7 @@ class MutualAttention(nn.Module):
         H1 = inputs1.transpose(0, 1)
         # H2_T : (bsz, odim, seq_len2)
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
-        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + \
-            self.b
+        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T))
         bsz, seq_len = S.shape[0], S.shape[1]
         # S_flatten : (bsz, seq_len1 * seq_len2)
         S_flatten = S.view(bsz, -1)
