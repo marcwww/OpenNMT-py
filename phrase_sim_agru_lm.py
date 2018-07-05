@@ -97,7 +97,7 @@ class Attention(nn.Module):
     def forward(self, inputs, mask):
         mask_a_raw = mask.unsqueeze(-1)
         a_raw = self.generator(inputs)
-        a_raw.masked_fill_(mask_a_raw, 0)
+        a_raw.masked_fill_(mask_a_raw, -float('inf'))
         a = self.softmax(a_raw)
         return (inputs * a).sum(dim=0)
 
