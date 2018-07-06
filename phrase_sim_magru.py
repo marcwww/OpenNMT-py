@@ -81,8 +81,10 @@ class MutualAttention(nn.Module):
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
         self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
+        self.relu = nn.ReLU()
 
     def forward(self, inputs1, inputs2, mask1, mask2):
+
         re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
         re_mask_inputs2 = mask2.data.eq(0).unsqueeze(-1).expand_as(inputs2)
         re_mask_inputs1 = re_mask_inputs1.transpose(0, 1).float()
@@ -115,6 +117,8 @@ class MutualAttention(nn.Module):
         if k_actual < self.k:
             rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k_actual)
             result[:, k_actual:] = rest
+
+        result = self.relu(result)
 
         # result : (bsz, self.k)
         return result
