@@ -229,7 +229,7 @@ def train(train_iter, val_iter, epoch, model,
             nbatch += 1
 
             loss = train_batch(sample,model,criterion,optim,
-                               class_weight,opt.lm_coef)
+                               class_weight)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
