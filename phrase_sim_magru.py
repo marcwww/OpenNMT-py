@@ -114,19 +114,6 @@ class MutualAttention(nn.Module):
             rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k_actual)
             result[:, k_actual:] = rest
 
-        # for i in xrange(bsz):
-        #     result_min = float('inf')
-        #     for j in xrange(self.k):
-        #         if result[i, j] == -float('inf'):
-        #             if result_min == float('inf'):
-        #                 result_min = 0
-        #             result[i, j] = result_min
-        #         elif result[i, j] < result_min:
-        #             result_min = result[i, j]
-
-        # mask_ninf = result.data.eq(-float('inf'))
-        # result.masked_fill_(mask_ninf, 0)
-
         # result : (bsz, self.k)
         return result
 
