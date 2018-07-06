@@ -67,11 +67,11 @@ class PhraseSim(nn.Module):
         # seq1 = seq1.unsqueeze(2)
         # seq2 = seq2.unsqueeze(2)
 
-        outputs1, hidden1 = self.encoder(seq1)
-        outputs2, hidden2 = self.encoder(seq2)
+        outputs1, hidden1, mask1 = self.encoder(seq1)
+        outputs2, hidden2, mask2 = self.encoder(seq2)
 
         # res : (bsz, k)
-        res = self.mual_attention(outputs1, outputs2)
+        res = self.mual_attention(outputs1, outputs2, mask1, mask2)
         probs = self.generator(res)
         we_T = self.encoder.embedding.weight.transpose(0, 1)
         if self.encoder.bidirection:
@@ -88,35 +88,48 @@ class MutualAttention(nn.Module):
     def __init__(self, hdim, k):
         super(MutualAttention, self).__init__()
         self.hdim = hdim
-        self.generator = nn.Sequential(
-            nn.Linear(hdim, hdim),
-            nn.Tanh(),
-            nn.Linear(hdim, 1),
-            nn.Softmax(dim=0)
-        )
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
         self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
+        self.relu = nn.ReLU()
 
-    def forward(self, inputs1, inputs2):
+    def forward(self, inputs1, inputs2, mask1, mask2):
+
+        re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
+        re_mask_inputs2 = mask2.data.eq(0).unsqueeze(-1).expand_as(inputs2)
+        re_mask_inputs1 = re_mask_inputs1.transpose(0, 1).float()
+        re_mask_inputs2_T = re_mask_inputs2.transpose(0, 1).transpose(1, 2).float()
+        mask_sims = torch.matmul(re_mask_inputs1, re_mask_inputs2_T).data.eq(0)
+        bsz = mask_sims.shape[0]
+        mask_sims = mask_sims.view(bsz, -1)
+        num_elems = mask_sims.shape[1]
+
         # inputs : (seq_len, bsz, odim)
-        # H1 : (bsz, seq_len, odim)
-        H1 = inputs1.transpose(0,1)
-        # H2_T : (bsz, odim, seq_len)
-        H2_T = inputs2.transpose(0,1).transpose(1,2)
-        # S : (bsz, seq_len, seq_len)
-        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T))\
-            + self.b
-        bsz, seq_len = S.shape[0], S.shape[1]
-        # S_flatten : (bsz, seq_len * seq_len)
+        # H1 : (bsz, seq_len1, odim)
+        H1 = inputs1.transpose(0, 1)
+        # H2_T : (bsz, odim, seq_len2)
+        H2_T = inputs2.transpose(0, 1).transpose(1, 2)
+        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + self.b
+
+        S = self.relu(S)
+
         S_flatten = S.view(bsz, -1)
-        k = min(self.k, seq_len)
-        q, _ = torch.topk(S_flatten, k, dim=-1)
+        S_flatten.masked_fill_(mask_sims, -float('inf'))
+
+        # S_flatten : (bsz, seq_len1 * seq_len2)
+        k_actual = min(self.k, num_elems)
+        # q : (bsz, k_actual)
+        q, _ = torch.topk(S_flatten, k_actual, dim=-1)
+        q_num_finite = (k_actual - q.data.eq(-float('inf')).sum(-1)).long()
+
+        for i in xrange(bsz):
+            q[i].masked_fill_(q[i].data.eq(-float('inf')), q[i, q_num_finite[i]-1])
+
         result = q.data.new(bsz, self.k)
-        result[:, :k] = q
-        if k < self.k:
-            rest = q[:,-1].unsqueeze(-1).expand(bsz,self.k-k)
-            result[:,k:]=rest
+        result[:, :k_actual] = q
+        if k_actual < self.k:
+            rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k_actual)
+            result[:, k_actual:] = rest
 
         # result : (bsz, self.k)
         return result
@@ -150,7 +163,7 @@ class Encoder(nn.Module):
         mask_hiddens = mask.unsqueeze(-1).expand_as(outputs)
         outputs = outputs.clone().masked_fill_(mask_hiddens, 0)
 
-        return outputs, hidden
+        return outputs, hidden, mask
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
