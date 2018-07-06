@@ -77,7 +77,9 @@ class MutualAttention(nn.Module):
         super(MutualAttention, self).__init__()
         self.hdim = hdim
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
+        self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
+        self.relu = nn.ReLU()
 
     def forward(self, inputs1, inputs2, mask1, mask2):
         re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
@@ -91,8 +93,9 @@ class MutualAttention(nn.Module):
         H1 = inputs1.transpose(0, 1)
         # H2_T : (bsz, odim, seq_len2)
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
-        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T))
+        S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + self.b
         S = S.masked_fill_(mask_sims, -float('inf')).clone()
+        S = self.relu(S)
         # S_flatten : (bsz, seq_len1 * seq_len2)
         bsz = S.shape[0]
         S_flatten = S.view(bsz, -1)
@@ -105,15 +108,15 @@ class MutualAttention(nn.Module):
             rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k)
             result[:, k:] = rest
 
-        for i in xrange(bsz):
-            result_min = float('inf')
-            for j in xrange(self.k):
-                if result[i, j] == -float('inf'):
-                    if result_min == float('inf'):
-                        result_min = 0
-                    result[i, j] = result_min
-                elif result[i, j] < result_min:
-                    result_min = result[i, j]
+        # for i in xrange(bsz):
+        #     result_min = float('inf')
+        #     for j in xrange(self.k):
+        #         if result[i, j] == -float('inf'):
+        #             if result_min == float('inf'):
+        #                 result_min = 0
+        #             result[i, j] = result_min
+        #         elif result[i, j] < result_min:
+        #             result_min = result[i, j]
 
         # mask_ninf = result.data.eq(-float('inf'))
         # result.masked_fill_(mask_ninf, 0)
