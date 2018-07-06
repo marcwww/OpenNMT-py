@@ -145,7 +145,7 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', m
     return TEXT, LABEL, train_iter, valid_iter
 
 if __name__ == '__main__':
-    TEXT, LABEL, train_iter, valid_iter = build_iters(level='char')
+    TEXT, LABEL, train_iter, valid_iter = build_iters(level='char', min_freq=10)
     file_res.close()
     # for sample in train_iter:
     #     print(sample.seq1)
