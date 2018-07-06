@@ -12,10 +12,12 @@ BOS_WORD = '<s>'
 EOS_WORD = '<e>'
 SEG_WORD = '<seg>'
 
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
+
+file_res = open('res.txt', 'w')
 
 with open(os.path.join(DATA, 'stop_words.txt'), 'r') as f:
     for line in f.readlines():
@@ -33,18 +35,26 @@ def tokenizer_char(txt):
     def seg_zh(matched):
         begin, end = matched.regs[0]
         phrase = matched.string[begin:end]
-        return ' '.join(list(phrase))
+        return ' '+' '.join(list(phrase))+' '
 
     def match_en(matched):
         begin, end = matched.regs[0]
         word = matched.string[begin:end]
         return ' '+word+' '
 
-    txt = re.sub(u'\*+', ' num ', txt)
+    def match_symbol(matched):
+        begin, end = matched.regs[0]
+        symbols = matched.string[begin:end]
+        return ' '+' '.join(list(symbols))+' '
+
+    txt = re.sub(u'\*+', ' * ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
+    txt = re.sub(u'[^ a-zA-Z\u4e00-\u9fa5\*]+', match_symbol, txt)
     txt = re.sub('\s+', ' ', txt)
     res = txt.split(' ')
+    file_res.write((' '.join(res)).encode('utf-8'))
+    file_res.write('\n')
     return res
 
 def tokenizer_charNword(txt):
@@ -136,6 +146,7 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', m
 
 if __name__ == '__main__':
     TEXT, LABEL, train_iter, valid_iter = build_iters(level='char')
+    file_res.close()
     # for sample in train_iter:
     #     print(sample.seq1)
     # word_dict = sorted(word_dict.items(), key=lambda tuple: tuple[1])
