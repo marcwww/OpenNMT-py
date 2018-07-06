@@ -62,11 +62,10 @@ class PhraseSim(nn.Module):
 
     def forward(self, seq1, seq2):
 
-        outputs1, hidden1, mask1 = self.encoder(seq1)
-        outputs2, hidden2, mask2 = self.encoder(seq2)
+        outputs1, hidden1 = self.encoder(seq1)
+        outputs2, hidden2 = self.encoder(seq2)
 
-        res = self.mutual_attention(outputs1, outputs2,
-                                    mask1, mask2)
+        res = self.mutual_attention(outputs1, outputs2)
         probs = self.generator(res)
 
         return probs
@@ -76,29 +75,16 @@ class MutualAttention(nn.Module):
     def __init__(self, hdim, k):
         super(MutualAttention, self).__init__()
         self.hdim = hdim
-        self.generator = nn.Sequential(
-            nn.Linear(hdim, hdim),
-            nn.ReLU(),
-            nn.Linear(hdim, 1),
-            nn.Softmax(dim=0)
-        )
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
         self.k = k
 
-    def forward(self, inputs1, inputs2, mask1, mask2):
-        re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
-        re_mask_inputs2 = mask2.data.eq(0).unsqueeze(-1).expand_as(inputs2)
-        re_mask_inputs1 = re_mask_inputs1.transpose(0, 1).float()
-        re_mask_inputs2_T = re_mask_inputs2.transpose(0, 1).transpose(1, 2).float()
-        mask_sims = torch.matmul(re_mask_inputs1, re_mask_inputs2_T).data.eq(0)
-
+    def forward(self, inputs1, inputs2):
         # inputs : (seq_len, bsz, odim)
         # H1 : (bsz, seq_len1, odim)
         H1 = inputs1.transpose(0, 1)
         # H2_T : (bsz, odim, seq_len2)
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
         S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T))
-        S = S.masked_fill_(mask_sims, -float('inf')).clone()
         bsz, seq_len = S.shape[0], S.shape[1]
         # S_flatten : (bsz, seq_len1 * seq_len2)
         S_flatten = S.view(bsz, -1)
@@ -141,7 +127,7 @@ class Encoder(nn.Module):
         outputs = outputs.clone().masked_fill_(mask_hiddens, 0)
         final_hidden = outputs[-1]
 
-        return outputs, final_hidden, mask
+        return outputs, final_hidden
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
