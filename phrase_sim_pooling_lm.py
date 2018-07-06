@@ -355,7 +355,7 @@ if __name__ == '__main__':
     criterion = {'ps': criterion_ps,
                  'lm': criterion_lm}
     epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
-             'end': 10000,
+             'end': opt.nepoch,
              'save_per': opt.save_per}
 
     train(train_iter, valid_iter, epoch,

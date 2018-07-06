@@ -217,7 +217,7 @@ def train_opts(parser):
     """ Training and saving options """
 
     group = parser.add_argument_group('General')
-    group.add_argument('-nepoch', default=100, type=int)
+    group.add_argument('-nepoch', default=150, type=int)
     group.add_argument('-load_idx', default=-1, type=int)
     group.add_argument('-max_len_total', default=200,type=int)
     group.add_argument('-ftrain', default='atec_train.txt.back', type=str)
