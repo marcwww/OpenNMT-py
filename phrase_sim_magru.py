@@ -212,6 +212,7 @@ def train(train_iter, val_iter, epoch, model,
     f1s=[]
     precs=[]
     recalls=[]
+    losses_log = []
 
     if opt.load_idx != -1:
         losses,accurs,\
@@ -220,15 +221,15 @@ def train(train_iter, val_iter, epoch, model,
 
     epoch_start = epoch['start']
     epoch_end = epoch['end']
-
-    # valid(val_iter,model)
+    save_per = epoch['save_per']
 
     for epoch in range(epoch_start,epoch_end):
         nbatch = 0
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim,class_weight)
+            loss = train_batch(sample,model,criterion,optim,
+                               class_weight,opt.lm_coef)
 
             loss_val = loss.data.item()
             losses.append(loss_val)
@@ -236,15 +237,17 @@ def train(train_iter, val_iter, epoch, model,
             progress_bar(percent,loss_val,epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
+        loss_mean = np.array(losses[-nbatch:]).mean()
         print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
-              (accurracy, precision, recall, f1, np.array(losses[-nbatch:]).mean()))
-        accurs.extend([accurracy for _ in range(nbatch)])
-        precs.extend([precision for _ in range(nbatch)])
-        recalls.extend([recall for _ in range(nbatch)])
-        f1s.append([f1 for _ in range(nbatch)])
+              (accurracy, precision, recall, f1, loss_mean))
+        accurs.append(accurracy)
+        precs.append(precision)
+        recalls.append(recall)
+        f1s.append(f1)
+        losses_log.append(loss_mean)
 
-        if (epoch+1) % SAVE_PER == 0:
-            save_checkpoint(model,epoch,losses,accurs,precs,recalls,f1s,opt.exp)
+        if (epoch+1) % save_per == 0:
+            save_checkpoint(model,epoch,losses_log,accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter, model):
     model.eval()
