@@ -58,7 +58,7 @@ class PhraseSim(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.k = k
         self.mutual_attention_layers = \
-            [MutualAttention(encoder.odim, k) for _ in xrange(nslices)]
+            nn.ModuleList([MutualAttention(encoder.odim, k) for _ in xrange(nslices)])
         self.nslices = nslices
 
     def forward(self, seq1, seq2):
