@@ -79,7 +79,7 @@ class MutualAttention(nn.Module):
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
         self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
-        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs1, inputs2, mask1, mask2):
         re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
@@ -95,7 +95,7 @@ class MutualAttention(nn.Module):
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
         S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + self.b
         S = S.masked_fill_(mask_sims, -float('inf')).clone()
-        S = self.relu(S)
+        S = self.sigmoid(S)
         # S_flatten : (bsz, seq_len1 * seq_len2)
         bsz = S.shape[0]
         S_flatten = S.view(bsz, -1)
