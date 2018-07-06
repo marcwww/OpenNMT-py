@@ -100,6 +100,9 @@ class MutualAttention(nn.Module):
         # H2_T : (bsz, odim, seq_len2)
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
         S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + self.b
+
+        S = self.relu(S)
+
         S_flatten = S.view(bsz, -1)
         S_flatten.masked_fill_(mask_sims, -float('inf'))
 
@@ -117,8 +120,6 @@ class MutualAttention(nn.Module):
         if k_actual < self.k:
             rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k_actual)
             result[:, k_actual:] = rest
-
-        result = self.relu(result)
 
         # result : (bsz, self.k)
         return result
