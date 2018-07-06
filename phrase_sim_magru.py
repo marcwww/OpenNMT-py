@@ -79,7 +79,6 @@ class MutualAttention(nn.Module):
         self.W = nn.Parameter(torch.Tensor(hdim, hdim))
         self.b = nn.Parameter(torch.Tensor(1))
         self.k = k
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs1, inputs2, mask1, mask2):
         re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
@@ -87,6 +86,9 @@ class MutualAttention(nn.Module):
         re_mask_inputs1 = re_mask_inputs1.transpose(0, 1).float()
         re_mask_inputs2_T = re_mask_inputs2.transpose(0, 1).transpose(1, 2).float()
         mask_sims = torch.matmul(re_mask_inputs1, re_mask_inputs2_T).data.eq(0)
+        bsz = mask_sims.shape[0]
+        mask_sims = mask_sims.view(bsz, -1)
+        num_elems = mask_sims.shape[1]
 
         # inputs : (seq_len, bsz, odim)
         # H1 : (bsz, seq_len1, odim)
@@ -94,19 +96,23 @@ class MutualAttention(nn.Module):
         # H2_T : (bsz, odim, seq_len2)
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
         S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T)) + self.b
-        S = S.masked_fill_(mask_sims, -float('inf')).clone()
-        S = self.sigmoid(S)
-        # S_flatten : (bsz, seq_len1 * seq_len2)
-        bsz = S.shape[0]
         S_flatten = S.view(bsz, -1)
-        num = S.shape[1]
-        k = min(self.k, num)
-        q, _ = torch.topk(S_flatten, k, dim=-1)
+        S_flatten.masked_fill_(mask_sims, -float('inf'))
+
+        # S_flatten : (bsz, seq_len1 * seq_len2)
+        k_actual = min(self.k, num_elems)
+        # q : (bsz, k_actual)
+        q, _ = torch.topk(S_flatten, k_actual, dim=-1)
+        q_num_finite = (k_actual - q.data.eq(-float('inf')).sum(-1)).long()
+
+        for i in xrange(bsz):
+            q[i].masked_fill_(q[i].data.eq(-float('inf')), q[i, q_num_finite[i]-1])
+
         result = q.data.new(bsz, self.k)
-        result[:, :k] = q
-        if k < self.k:
-            rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k)
-            result[:, k:] = rest
+        result[:, :k_actual] = q
+        if k_actual < self.k:
+            rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k_actual)
+            result[:, k_actual:] = rest
 
         # for i in xrange(bsz):
         #     result_min = float('inf')
