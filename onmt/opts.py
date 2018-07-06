@@ -24,6 +24,7 @@ def model_opts(parser):
     group.add_argument('-clf_dim', type=int, default=100)
     group.add_argument('-k', type=int, default=10)
     group.add_argument('-nslices', type=int, default=5)
+    group.add_argument('-min_freq', type=int, default=1)
     group.add_argument('-share_decoder_embeddings', action='store_true',
                        help="""Use a shared weight matrix for the input and
                        output word  embeddings in the decoder.""")

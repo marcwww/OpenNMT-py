@@ -38,13 +38,9 @@ def tokenizer_char(txt):
     def match_en(matched):
         begin, end = matched.regs[0]
         word = matched.string[begin:end]
-        if len(word)>1:
-            return ' '+word+' '
-        else:
-            return ''
+        return ' '+word+' '
 
-    txt = re.sub(u'[!“\"#$%&\'()+,-./:;<=>?@[\]^_`{|}~，。！？、【】「」～☆]+', '', txt)
-    txt = re.sub(u'[0-9]+\*+[0-9]+|[0-9]+|\*\*\*', ' num ', txt)
+    txt = re.sub(u'\*+', ' num ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
     txt = re.sub('\s+', ' ', txt)
@@ -60,7 +56,7 @@ def tokenizer_charNword(txt):
         res.append(w)
     return res
 
-def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
+def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', min_freq=1):
 
     if level == 'word':
         tokenizer = tokenizer_word
@@ -81,7 +77,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
                                         ('seq2', TEXT),
                                         ('lbl', LABEL)
                                     ])
-    TEXT.build_vocab(train)
+    TEXT.build_vocab(train, min_freq = min_freq)
     train_iter = data.Iterator(train, batch_size=bsz,
                                sort=False, repeat=False)
 
@@ -98,7 +94,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
 
     return TEXT, LABEL, train_iter, valid_iter
 
-def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
+def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', min_freq=1):
 
     if level == 'word':
         tokenizer = tokenizer_word
@@ -121,7 +117,7 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char'):
                                         ('seq2', TEXT),
                                         ('lbl', LABEL)
                                     ])
-    TEXT.build_vocab(train)
+    TEXT.build_vocab(train, min_freq=min_freq)
     train_iter = data.Iterator(train, batch_size=bsz,
                                sort=False, repeat=False)
 
