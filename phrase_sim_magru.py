@@ -88,8 +88,8 @@ class MutualAttention(nn.Module):
     def forward(self, inputs1, inputs2, mask1, mask2):
         re_mask_inputs1 = mask1.data.eq(0).unsqueeze(-1).expand_as(inputs1)
         re_mask_inputs2 = mask2.data.eq(0).unsqueeze(-1).expand_as(inputs2)
-        re_mask_inputs1 = re_mask_inputs1.transpose(0, 1).type(torch.FloatTensor)
-        re_mask_inputs2_T = re_mask_inputs2.transpose(0, 1).transpose(1, 2).type(torch.FloatTensor)
+        re_mask_inputs1 = re_mask_inputs1.transpose(0, 1) * 1.0
+        re_mask_inputs2_T = re_mask_inputs2.transpose(0, 1).transpose(1, 2) * 1.0
         mask_sims = torch.matmul(re_mask_inputs1, re_mask_inputs2_T).data.eq(0)
 
         # inputs : (seq_len, bsz, odim)
