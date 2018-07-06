@@ -107,7 +107,7 @@ class MutualAttention(nn.Module):
 
         for i in xrange(bsz):
             result_min = float('inf')
-            for j in xrange(num):
+            for j in xrange(self.k):
                 if result[i, j] == -float('inf'):
                     if result_min == float('inf'):
                         result_min = 0
