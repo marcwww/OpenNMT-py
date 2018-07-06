@@ -105,11 +105,12 @@ class MutualAttention(nn.Module):
             for i in xrange(bsz):
                 q_min = float('inf')
                 for j in xrange(num):
-                    if q[i, j] < q_min:
-                        if q[i ,j] != -float('inf'):
-                            q_min = q[i,j]
-                        else:
-                            q[i, j] = q_min
+                    if q[i, j] == -float('inf'):
+                        if q_min == float('inf'):
+                            q_min = 0
+                        q[i ,j] = q_min
+                    elif q[i, j] < q_min:
+                        q_min = q[i, j]
 
             rest = q[:, -1].unsqueeze(-1).expand(bsz, self.k - k)
             result[:, k:] = rest
