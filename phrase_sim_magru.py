@@ -93,10 +93,11 @@ class MutualAttention(nn.Module):
         H2_T = inputs2.transpose(0, 1).transpose(1, 2)
         S = torch.matmul(H1, self.W.unsqueeze(0).matmul(H2_T))
         S = S.masked_fill_(mask_sims, -float('inf')).clone()
-        bsz, seq_len = S.shape[0], S.shape[1]
         # S_flatten : (bsz, seq_len1 * seq_len2)
+        bsz = S.shape[0]
         S_flatten = S.view(bsz, -1)
-        k = min(self.k, seq_len)
+        num = S.shape[1]
+        k = min(self.k, num)
         q, _ = torch.topk(S_flatten, k, dim=-1)
         result = q.data.new(bsz, self.k)
         result[:, :k] = q
