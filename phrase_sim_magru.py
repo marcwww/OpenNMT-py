@@ -45,28 +45,30 @@ class MultiWay(nn.Module):
 
 class PhraseSim(nn.Module):
 
-    def __init__(self, encoder, dropout, k):
+    def __init__(self, encoder, dropout, k, nslices):
         super(PhraseSim, self).__init__()
         self.encoder = encoder
         self.avg = Avg()
         self.MultiWay =MultiWay()
         self.generator = nn.Sequential(
-            nn.Linear(k, k),
+            nn.Linear(k * nslices, k * nslices),
             nn.ReLU(),
-            nn.Linear(k, 2),
+            nn.Linear(k * nslices, 2),
             nn.Softmax(dim = -1))
         self.dropout = nn.Dropout(dropout)
         self.k = k
-        self.mutual_attention = \
-            MutualAttention(encoder.odim, k)
+        self.mutual_attention_layers = \
+            [MutualAttention(encoder.odim, k) for _ in xrange(nslices)]
+        self.nslices = nslices
 
     def forward(self, seq1, seq2):
 
         outputs1, hidden1, mask1 = self.encoder(seq1)
         outputs2, hidden2, mask2 = self.encoder(seq2)
 
-        res = self.mutual_attention(outputs1, outputs2,
+        res = torch.cat([self.mutual_attention_layers[i](outputs1, outputs2,
                                     mask1, mask2)
+               for i in xrange(self.nslices)], dim=-1)
         probs = self.generator(res)
 
         return probs
@@ -364,7 +366,7 @@ if __name__ == '__main__':
                       opt.enc_layers,
                       opt.dropout,
                       opt.bidirection)
-    model = PhraseSim(encoder, opt.dropout, k=opt.k).to(device)
+    model = PhraseSim(encoder, opt.dropout, k=opt.k, nslices=opt.nslices).to(device)
     init_model(opt, model)
 
     # print(model.state_dict())
