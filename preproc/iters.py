@@ -13,8 +13,8 @@ BOS_WORD = '<s>'
 EOS_WORD = '<e>'
 SEG_WORD = '<seg>'
 
-# HOME=os.path.abspath('.')
-HOME=os.path.abspath('..')
+HOME=os.path.abspath('.')
+# HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
 
@@ -36,9 +36,9 @@ def tokenizer_char(txt):
     def seg_zh(matched):
         begin, end = matched.regs[0]
         phrase = matched.string[begin:end]
-        # phrase_simp = phrase
-        phrase_simp = langconv.Converter('zh-hans').\
-            convert(phrase)
+        phrase_simp = phrase
+        # phrase_simp = langconv.Converter('zh-hans').\
+        #     convert(phrase)
         return ' '+' '.join(list(phrase_simp))+' '
 
     def match_en(matched):
