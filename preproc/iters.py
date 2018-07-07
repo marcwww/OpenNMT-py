@@ -136,6 +136,7 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', m
                                         ('lbl', LABEL)
                                     ])
     TEXT.build_vocab(train, min_freq=min_freq)
+    print('Vocab size: ', len(TEXT.vocab.itos))
     train_iter = data.Iterator(train, batch_size=bsz,
                                sort=False, repeat=False)
 
