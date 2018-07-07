@@ -3,6 +3,7 @@ import torchtext
 import os
 import jieba
 import re
+import langconv
 
 from torchtext import data
 
@@ -12,8 +13,8 @@ BOS_WORD = '<s>'
 EOS_WORD = '<e>'
 SEG_WORD = '<seg>'
 
-HOME=os.path.abspath('.')
-# HOME=os.path.abspath('..')
+# HOME=os.path.abspath('.')
+HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
 
@@ -35,7 +36,10 @@ def tokenizer_char(txt):
     def seg_zh(matched):
         begin, end = matched.regs[0]
         phrase = matched.string[begin:end]
-        return ' '+' '.join(list(phrase))+' '
+        # phrase_simp = phrase
+        phrase_simp = langconv.Converter('zh-hans').\
+            convert(phrase)
+        return ' '+' '.join(list(phrase_simp))+' '
 
     def match_en(matched):
         begin, end = matched.regs[0]
@@ -88,6 +92,7 @@ def build_iters(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', min_
                                         ('lbl', LABEL)
                                     ])
     TEXT.build_vocab(train, min_freq = min_freq)
+    print('Vocab size: ', len(TEXT.vocab.itos))
     train_iter = data.Iterator(train, batch_size=bsz,
                                sort=False, repeat=False)
 
@@ -145,7 +150,7 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', m
     return TEXT, LABEL, train_iter, valid_iter
 
 if __name__ == '__main__':
-    TEXT, LABEL, train_iter, valid_iter = build_iters(level='char', min_freq=10)
+    TEXT, LABEL, train_iter, valid_iter = build_iters(level='char', min_freq=1)
     file_res.close()
     # for sample in train_iter:
     #     print(sample.seq1)

@@ -372,7 +372,7 @@ if __name__ == '__main__':
     criterion_lm = nn.CrossEntropyLoss(ignore_index=TEXT.vocab.stoi[iters.PAD_WORD])
     criterion = {'ps': criterion_ps,
                  'lm': criterion_lm}
-    epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
+    epoch = {'start': opt.load_idx + 1 if opt.load_idx != -1 else 0,
              'end': opt.nepoch,
              'save_per': opt.save_per}
 
