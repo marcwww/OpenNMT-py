@@ -13,7 +13,9 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-fname = 'pad-epoch-94.json'
+exp = 'user_words'
+epoch = 124
+fname = '%s-epoch-%d.json' % (exp, epoch)
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
 # Read the metrics from the .json files

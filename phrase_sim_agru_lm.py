@@ -194,8 +194,8 @@ def train_batch(sample, model, criterion, optim, lm_coef):
     optim.step()
 
     return {'loss':loss.data.item(),
-            'loss_ps':loss_ps.data.item(),
-            'loss_lm':((loss_lm1+loss_lm2)/2).data.item()}
+            'ps':loss_ps.data.item(),
+            'lm':((loss_lm1+loss_lm2)/2).data.item()}
 
 def restore_log(opt):
     basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
