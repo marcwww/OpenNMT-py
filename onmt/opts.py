@@ -220,8 +220,10 @@ def train_opts(parser):
     group.add_argument('-nepoch', default=150, type=int)
     group.add_argument('-load_idx', default=-1, type=int)
     group.add_argument('-max_len_total', default=200,type=int)
-    group.add_argument('-ftrain', default='atec_train.txt.back', type=str)
-    group.add_argument('-fvalid', default='atec_valid.txt.back', type=str)
+    # group.add_argument('-ftrain', default='atec_train.txt.back', type=str)
+    # group.add_argument('-fvalid', default='atec_valid.txt.back', type=str)
+    group.add_argument('-ftrain', default='ftrain.txt', type=str)
+    group.add_argument('-fvalid', default='fvalid.txt', type=str)
     group.add_argument('-save_per', default=5, type=int)
 
     group.add_argument('-lm_coef', default=0.5, type=float)
@@ -346,7 +348,7 @@ def train_opts(parser):
                        suggested a value of 0.98 for beta2, this parameter may
                        not work well for normal models / default
                        baselines.""")
-    group.add_argument('-label_smoothing', type=float, default=0.0,
+    group.add_argument('-label_smoothing', type=float, default=0.8513257869437123,
                        help="""Label smoothing value epsilon.
                        Probabilities of all non-true labels
                        will be smoothed by epsilon / (vocab_size - 1).
