@@ -166,11 +166,14 @@ def save_checkpoint(model, epoch,
     # LOGGER.info("Saving model training history to '%s'", train_fname)
     print("Saving model training history to '%s'" % (train_fname))
     content = {
+        'loss': losses['loss'],
+        'loss_ps': losses['loss_ps'],
+        'loss_lm': losses['loss_lm'],
         'accuracy': accurs,
         'precs': precs,
         'recalls': recalls,
         'f1s': f1s
-    }.update(losses)
+    }
     open(train_fname, 'wt').write(json.dumps(content))
 
 def train_batch(sample, model, criterion, optim, lm_coef):
