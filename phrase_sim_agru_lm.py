@@ -91,11 +91,14 @@ class Attention(nn.Module):
             nn.Linear(hdim, hdim),
             nn.Tanh(),
             nn.Linear(hdim, 1),
-            nn.Softmax(dim=0)
+            # nn.Softmax(dim=0)
         )
+        self.softmax = nn.Softmax(dim=0)
 
-    def forward(self, inputs):
-        a = self.generator(inputs)
+    def forward(self, inputs, mask):
+        a_raw = self.generator(inputs)
+        a_raw.masked_fill_(mask.unsqueeze(-1), -float('inf'))
+        a = self.softmax(a_raw)
         return (inputs * a).sum(dim=0)
 
 class Encoder(nn.Module):
@@ -119,13 +122,13 @@ class Encoder(nn.Module):
     def forward(self, inputs, hidden=None):
         embs = self.embedding(inputs)
         mask = inputs.data.eq(self.padding_idx)
-        mask = mask.unsqueeze(-1).expand_as(embs)
-        embs.masked_fill_(mask, 0)
+        mask_embs = mask.unsqueeze(-1).expand_as(embs)
+        embs.masked_fill_(mask_embs, 0)
 
         embs = self.dropout(embs)
 
         outputs, hidden = self.gru(embs, hidden)
-        final_hidden = self.attention(outputs)
+        final_hidden = self.attention(outputs, mask)
 
         return outputs, final_hidden
 
@@ -156,15 +159,14 @@ def save_checkpoint(model, epoch,
     # LOGGER.info("Saving model training history to '%s'", train_fname)
     print("Saving model training history to '%s'" % (train_fname))
     content = {
-        'loss': losses,
         'accuracy': accurs,
         'precs': precs,
         'recalls': recalls,
         'f1s': f1s
-    }
+    }.update(losses)
     open(train_fname, 'wt').write(json.dumps(content))
 
-def train_batch(sample, model, criterion, optim, class_weight, lm_coef):
+def train_batch(sample, model, criterion, optim, lm_coef):
     model.train()
 
     model.zero_grad()
@@ -191,7 +193,9 @@ def train_batch(sample, model, criterion, optim, class_weight, lm_coef):
     loss.backward()
     optim.step()
 
-    return loss
+    return {'loss':loss.data.item(),
+            'loss_ps':loss_ps.data.item(),
+            'loss_lm':((loss_lm1+loss_lm2)/2).data.item()}
 
 def restore_log(opt):
     basename = "{}-epoch-{}".format(opt.exp, opt.load_idx)
@@ -202,14 +206,18 @@ def restore_log(opt):
            history['precs'],history['recalls'],history['f1s']
 
 def train(train_iter, val_iter, epoch, model,
-          optim, criterion, opt, class_weight):
+          optim, criterion, opt):
 
     losses=[]
+    losses_ps = []
+    losses_lm = []
     accurs=[]
     f1s=[]
     precs=[]
     recalls=[]
     losses_log=[]
+    losses_ps_log=[]
+    losses_lm_log = []
 
     if opt.load_idx != -1:
         losses,accurs,\
@@ -225,26 +233,32 @@ def train(train_iter, val_iter, epoch, model,
         for i, sample in enumerate(train_iter):
             nbatch += 1
 
-            loss = train_batch(sample,model,criterion,optim,
-                               class_weight,opt.lm_coef)
-
-            loss_val = loss.data.item()
-            losses.append(loss_val)
+            loss = train_batch(sample,model,criterion,optim,opt.lm_coef)
+            losses.append(loss['loss'])
+            losses_ps.append(loss['ps'])
+            losses_lm.append(loss['lm'])
             percent = (i+.0)/len(train_iter)
-            progress_bar(percent,loss_val,epoch)
+            progress_bar(percent,loss['loss'],epoch)
 
         accurracy, precision, recall, f1 = valid(val_iter,model)
         loss_mean = np.array(losses[-nbatch:]).mean()
-        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss:%.4f" %
-              (accurracy, precision, recall, f1, loss_mean))
+        loss_ps_mean = np.array(losses_ps[-nbatch:]).mean()
+        loss_lm_mean = np.array(losses_lm[-nbatch:]).mean()
+        print("Valid: accuracy:%.3f precision:%.3f recall:%.3f f1:%.3f avg_loss(total/ps/lm):%.4f/%.4f/%.4f" %
+              (accurracy, precision, recall, f1, loss_mean, loss_ps_mean, loss_lm_mean))
         accurs.append(accurracy)
         precs.append(precision)
         recalls.append(recall)
         f1s.append(f1)
         losses_log.append(loss_mean)
+        losses_ps_log.append(loss_ps_mean)
+        losses_lm_log.append(loss_lm_mean)
 
         if (epoch+1) % save_per == 0:
-            save_checkpoint(model,epoch,losses_log,accurs,precs,recalls,f1s,opt.exp)
+            save_checkpoint(model,epoch,{'loss':losses_log,
+                                         'loss_ps':losses_ps_log,
+                                         'loss_lm':losses_lm_log},
+                            accurs,precs,recalls,f1s,opt.exp)
 
 def valid(val_iter, model):
     model.eval()
@@ -369,9 +383,9 @@ if __name__ == '__main__':
     criterion_lm = nn.CrossEntropyLoss(ignore_index=TEXT.vocab.stoi[iters.PAD_WORD])
     criterion = {'ps': criterion_ps,
                  'lm': criterion_lm}
-    epoch = {'start': opt.load_idx if opt.load_idx != -1 else 0,
+    epoch = {'start': opt.load_idx + 1 if opt.load_idx != -1 else 0,
              'end': opt.nepoch,
              'save_per': opt.save_per}
 
     train(train_iter, valid_iter, epoch,
-          model, optim, criterion, opt, cweights)
+          model, optim, criterion, opt)
