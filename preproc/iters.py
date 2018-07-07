@@ -17,6 +17,15 @@ HOME=os.path.abspath('.')
 # HOME=os.path.abspath('..')
 DATA=os.path.join(HOME,'data_folder')
 STOP_WORDS=set()
+USERDICT = os.path.join(DATA, 'dict.txt')
+user_dict=set()
+user_words=[]
+with open(USERDICT, 'r') as f_dict:
+    for word in f_dict:
+        user_words.append('('+word.strip().decode('utf-8')+')')
+        user_dict.add(word.strip().decode('utf-8'))
+user_words = '|'.join(user_dict)
+user_dict = set(user_dict)
 
 file_res = open('res.txt', 'w')
 
@@ -33,13 +42,25 @@ def tokenizer_word(txt):
 
 def tokenizer_char(txt):
 
+    def match_user_words(matched):
+        begin, end = matched.regs[0]
+        word = matched.string[begin:end]
+        return ' '+word+' '
+
+    def simplify(matched):
+        begin, end = matched.regs[0]
+        phrase = matched.string[begin:end]
+        phrase_simp = langconv.Converter('zh-hans'). \
+            convert(phrase)
+        return phrase_simp
+
     def seg_zh(matched):
         begin, end = matched.regs[0]
         phrase = matched.string[begin:end]
-        # phrase_simp = phrase
-        phrase_simp = langconv.Converter('zh-hans').\
-            convert(phrase)
-        return ' '+' '.join(list(phrase_simp))+' '
+        if phrase not in user_dict:
+            return ' '+' '.join(list(phrase))+' '
+        else:
+            return phrase
 
     def match_en(matched):
         begin, end = matched.regs[0]
@@ -56,6 +77,8 @@ def tokenizer_char(txt):
 
     txt = re.sub(u'\*+', ' * ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
+    txt = re.sub(u'[\u4e00-\u9fa5]+', simplify, txt)
+    txt = re.sub(user_words, match_user_words, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
     txt = re.sub(u'[^ a-zA-Z\u4e00-\u9fa5\*]+', match_symbol, txt)
     txt = re.sub('\s+', ' ', txt)
