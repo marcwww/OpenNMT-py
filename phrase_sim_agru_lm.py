@@ -81,8 +81,8 @@ class PhraseSim(nn.Module):
         if self.encoder.bidirection:
             # we_T = torch.stack([we_T, we_T], dim=0).\
             #     view(-1, self.encoder.embedding.num_embeddings)
-            outputs1 = outputs1[:, :, self.encoder.odim / 2:]
-            outputs2 = outputs2[:, :, self.encoder.odim / 2:]
+            outputs1 = outputs1[:, :, :self.encoder.odim / 2]
+            outputs2 = outputs2[:, :, :self.encoder.odim / 2]
 
         logits1 = torch.matmul(outputs1, self.W_dis.matmul(we_T))
         logits2 = torch.matmul(outputs2, self.W_dis.matmul(we_T))
