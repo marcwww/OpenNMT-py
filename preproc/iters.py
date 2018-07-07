@@ -36,20 +36,23 @@ def tokenizer_char(txt):
     def seg_zh(matched):
         begin, end = matched.regs[0]
         phrase = matched.string[begin:end]
-        phrase_simp = phrase
-        # phrase_simp = langconv.Converter('zh-hans').\
-        #     convert(phrase)
+        # phrase_simp = phrase
+        phrase_simp = langconv.Converter('zh-hans').\
+            convert(phrase)
         return ' '+' '.join(list(phrase_simp))+' '
 
     def match_en(matched):
         begin, end = matched.regs[0]
         word = matched.string[begin:end]
-        return ' '+word+' '
+        if len(word)>1:
+            return ' '+word+' '
+        else:
+            return ' '
 
     def match_symbol(matched):
         begin, end = matched.regs[0]
         symbols = matched.string[begin:end]
-        return ' '+' '.join(list(symbols))+' '
+        return ' '+symbols[0]+' '
 
     txt = re.sub(u'\*+', ' * ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
