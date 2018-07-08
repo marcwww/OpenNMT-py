@@ -178,7 +178,11 @@ def build_iters_lm(ftrain='train.tsv',fvalid='valid.tsv',bsz=64, level='char', m
 
 def build_iters_pretrain(fpretrain='para_pretrain.tsv',
                             ftrain='para_train.tsv',
-                            fvalid='para_valid.tsv',bsz=64, level='char', min_freq=1):
+                            fvalid='para_valid.tsv',
+                            bsz=64,
+                            level='char',
+                            min_freq=1,
+                            is_pretrain=True):
 
     if level == 'word':
         tokenizer = tokenizer_word
@@ -206,14 +210,17 @@ def build_iters_pretrain(fpretrain='para_pretrain.tsv',
     train_iter = data.Iterator(train, batch_size=bsz,
                                sort=False, repeat=False)
 
-    pretrain = data.TabularDataset(path=os.path.join(DATA, fpretrain), format='tsv',
-                                    fields=[
-                                        ('seq1', TEXT),
-                                        ('seq2', TEXT),
-                                        ('lbl', LABEL)
-                                    ])
-    pretrain_iter = data.Iterator(pretrain, batch_size=bsz,
-                                  sort=False, repeat=False)
+    if is_pretrain:
+        pretrain = data.TabularDataset(path=os.path.join(DATA, fpretrain), format='tsv',
+                                        fields=[
+                                            ('seq1', TEXT),
+                                            ('seq2', TEXT),
+                                            ('lbl', LABEL)
+                                        ])
+        pretrain_iter = data.Iterator(pretrain, batch_size=bsz,
+                                      sort=False, repeat=False)
+    else:
+        pretrain_iter = None
 
     valid = data.TabularDataset(path=os.path.join(DATA, fvalid), format='tsv',
                                 fields=[
