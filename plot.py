@@ -13,7 +13,7 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-exp = 'agru_lm'
+exp = 'tanh'
 epoch = 149
 fname = '%s-epoch-%d.json' % (exp, epoch)
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
