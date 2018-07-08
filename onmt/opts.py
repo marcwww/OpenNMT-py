@@ -38,6 +38,7 @@ def model_opts(parser):
                        """)
     group.add_argument('-level', type=str, default='char')
     group.add_argument('-pooling', type=str, default='avg')
+    group.add_argument('-pos_weight', type=float, default=0.5)
 
     group = parser.add_argument_group('Model-Embedding Features')
     group.add_argument('-feat_merge', type=str, default='concat',
@@ -222,9 +223,11 @@ def train_opts(parser):
     group.add_argument('-max_len_total', default=200,type=int)
     # group.add_argument('-ftrain', default='atec_train.txt.back', type=str)
     # group.add_argument('-fvalid', default='atec_valid.txt.back', type=str)
-    group.add_argument('-ftrain', default='ftrain.txt', type=str)
-    group.add_argument('-fvalid', default='fvalid.txt', type=str)
+    group.add_argument('-fpretrain', default='para_pretrain.txt', type=str)
+    group.add_argument('-ftrain', default='para_train.txt', type=str)
+    group.add_argument('-fvalid', default='para_valid.txt', type=str)
     group.add_argument('-save_per', default=5, type=int)
+    group.add_argument('-pretrain', action='store_true', default=False)
 
     group.add_argument('-lm_coef', default=0.5, type=float)
 
