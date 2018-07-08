@@ -78,7 +78,7 @@ def tokenizer_char(txt):
     txt = re.sub(u'\*+', ' * ', txt)
     txt = re.sub(u'[a-zA-z]+', match_en, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', simplify, txt)
-    txt = re.sub(user_words, match_user_words, txt)
+    # txt = re.sub(user_words, match_user_words, txt)
     txt = re.sub(u'[\u4e00-\u9fa5]+', seg_zh, txt)
     txt = re.sub(u'[^ a-zA-Z\u4e00-\u9fa5\*]+', match_symbol, txt)
     txt = re.sub('\s+', ' ', txt)

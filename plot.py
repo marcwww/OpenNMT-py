@@ -13,8 +13,8 @@ import crash_on_ipy
 # name='demo-epoch-239'
 #
 # fname = "./"+ name +'.json'
-exp = 'tanh'
-epoch = 149
+exp = 'pretrain'
+epoch = 64
 fname = '%s-epoch-%d.json' % (exp, epoch)
 # files.append("./copy-task-test-10-batch-{}.json".format(batch_num))
 
@@ -38,7 +38,9 @@ print(np.max(f1))
 f1 = f1.reshape(-1)
 
 print(np.where(f1 == np.max(f1)), np.max(f1))
-print(np.where(f1 >= 0.60))
+good_f1 = 0.614
+print(np.where(f1 >= good_f1))
+
 
 print("Training history (seed x metric x sequence) =", training.shape)
 
@@ -49,7 +51,7 @@ training_mean = training[:l*dv].reshape(-1, dv).mean(axis=1)
 f1_mean = f1[:l*dv].reshape(-1, dv).mean(axis=1)
 training_std = training[:l*dv].reshape(-1, dv).std(axis=1)
 # print(training.shape)
-
+print(training_mean[13])
 # Average the seeds
 fig = plt.figure(figsize=(14, 5))
 batch_num=64
