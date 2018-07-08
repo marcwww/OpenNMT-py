@@ -361,7 +361,8 @@ if __name__ == '__main__':
                                    ftrain=opt.ftrain,
                                    fvalid=opt.fvalid,
                                    bsz=opt.batch_size, level=opt.level,
-                                   min_freq=opt.min_freq)
+                                   min_freq=opt.min_freq,
+                                   is_pretrain=opt.pretrain)
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
