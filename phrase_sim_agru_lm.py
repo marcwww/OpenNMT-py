@@ -363,7 +363,11 @@ if __name__ == '__main__':
 
     class_probs = dataset_bias(train_iter)
     print('Class probs: ', class_probs)
-    cweights = class_weight(class_probs, opt.label_smoothing)
+    # cweights = class_weight(class_probs, opt.label_smoothing)
+    cweights = {
+        'wneg': 1 - opt.pos_weight,
+        'wpos': opt.pos_weight
+    }
     print('Class weights: ', cweights)
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
