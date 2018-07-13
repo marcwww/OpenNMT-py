@@ -316,7 +316,7 @@ def train_opts(parser):
                         uses more memory.""")
     group.add_argument('-train_steps', type=int, default=100000,
                        help='Number of training steps')
-    group.add_argument('-optim', default='sgd',
+    group.add_argument('-optim', default='adam',
                        choices=['sgd', 'adagrad', 'adadelta', 'adam',
                                 'sparseadam'],
                        help="""Optimization method.""")
@@ -360,7 +360,7 @@ def train_opts(parser):
                        https://arxiv.org/abs/1512.00567""")
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
-    group.add_argument('-learning_rate', type=float, default=1.0,
+    group.add_argument('-learning_rate', type=float, default=1e-3,
                        help="""Starting learning rate.
                        Recommended settings: sgd = 1, adagrad = 0.1,
                        adadelta = 1, adam = 0.001""")
