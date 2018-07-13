@@ -17,7 +17,7 @@ def model_opts(parser):
 
     # Embedding Options
     group = parser.add_argument_group('Model-Embeddings')
-    group.add_argument('-src_word_vec_size', type=int, default=400,
+    group.add_argument('-src_word_vec_size', type=int, default=256,
                        help='Word embedding size for src.')
     group.add_argument('-word_vec_size', type=int, default=-1,
                        help='Word embedding size for src and tgt.')
@@ -63,17 +63,17 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-rnn_size', type=int, default=400,
+    group.add_argument('-rnn_size', type=int, default=256,
                        help='Size of rnn hidden states')
     group.add_argument('-cnn_kernel_width', type=int, default=3,
                        help="""Size of windows in the cnn, the kernel_size is
                        (cnn_kernel_width, 1) in conv layer""")
     group.add_argument('-bidirection', action='store_true', default=False)
 
-    group.add_argument('-nstack', type=int, default=2)
+    group.add_argument('-nstack', type=int, default=1)
     group.add_argument('-stack_depth', type=int, default=2)
-    group.add_argument('-stack_size', type=int, default=100)
-    group.add_argument('-stack_elem_size', type=int, default=400)
+    group.add_argument('-stack_size', type=int, default=50)
+    group.add_argument('-stack_elem_size', type=int, default=256)
 
     group.add_argument('-input_feed', type=int, default=1,
                        help="""Feed the context vector at each time step as
