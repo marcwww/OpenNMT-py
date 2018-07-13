@@ -216,12 +216,8 @@ class EncoderSRNN(nn.Module):
     def forward(self, inputs):
 
         bsz = inputs.shape[1]
-        hidden = \
-            self.encoder. \
-                init_hidden(bsz, self.device)
-        stacks = \
-            self.encoder. \
-                init_stack(bsz, self.device)
+        hidden = self.init_hidden(bsz, self.device)
+        stacks = self.init_stack(bsz, self.device)
 
         # inputs: length * bsz
         # stacks: bsz * nstack * stacksz * stackelemsz
