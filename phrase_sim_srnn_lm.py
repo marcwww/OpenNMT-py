@@ -153,9 +153,10 @@ class EncoderSRNN(nn.Module):
     def __init__(self, input_size, hidden_size,
                  padding_idx, nstack,
                  stack_depth, stack_size,
-                 stack_elem_size):
+                 stack_elem_size, dropout):
         super(EncoderSRNN, self).__init__()
         # here input dimention is equal to hidden dimention
+        self.dropout = nn.Dropout(dropout)
         self.hidden_size = hidden_size
         self.nstack=nstack
         self.stack_size=stack_size
@@ -522,7 +523,8 @@ if __name__ == '__main__':
                           opt.nstack,
                           opt.stack_depth,
                           opt.stack_size,
-                          opt.stack_elem_size)
+                          opt.stack_elem_size,
+                          opt.dropout)
 
     model = PhraseSim(encoder, opt.dropout).to(device)
     init_model(opt, model)
