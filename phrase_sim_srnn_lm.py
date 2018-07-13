@@ -177,7 +177,11 @@ class EncoderSRNN(nn.Module):
 
         self.gru = nn.GRUCell(hidden_size, hidden_size)
 
-        self.empty_elem =torch.randn(1,self.stack_elem_size,requires_grad=True)
+        self.empty_elem = \
+            nn.Parameter(torch.randn(1, self.stack_elem_size))
+
+        self.init_hidden = nn.Parameter(torch.zeros(1, self.hidden_size),
+                                        requires_grad=False)
 
         W_up, W_down = shift_matrix(stack_size)
         self.W_up = nn.Parameter(torch.Tensor(W_up))
@@ -216,8 +220,8 @@ class EncoderSRNN(nn.Module):
     def forward(self, inputs):
 
         bsz = inputs.shape[1]
-        hidden = self.init_hidden(bsz, self.device)
-        stacks = self.init_stack(bsz, self.device)
+        hidden = self.init_hidden(bsz)
+        stacks = self.init_stack(bsz)
 
         # inputs: length * bsz
         # stacks: bsz * nstack * stacksz * stackelemsz
@@ -262,15 +266,15 @@ class EncoderSRNN(nn.Module):
 
         return outputs, final_hidden, stacks
 
-    def init_stack(self, batch_size, device):
+    def init_stack(self, batch_size):
         return self.empty_elem.expand(batch_size,
                                       self.nstack,
                                       self.stack_size,
                                       self.stack_elem_size).\
-                                      contiguous().to(device)
+                                      contiguous()
 
-    def init_hidden(self, batch_size, device):
-        return torch.zeros(batch_size,self.hidden_size).to(device)
+    def init_hidden(self, batch_size):
+        return self.hidden_size.expand(batch_size, self.hidden_size)
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
