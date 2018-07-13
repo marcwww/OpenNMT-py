@@ -180,7 +180,7 @@ class EncoderSRNN(nn.Module):
         self.empty_elem = \
             nn.Parameter(torch.randn(1, self.stack_elem_size))
 
-        self.init_hidden = nn.Parameter(torch.zeros(1, self.hidden_size),
+        self.zero_hidden = nn.Parameter(torch.zeros(1, self.hidden_size),
                                         requires_grad=False)
 
         W_up, W_down = shift_matrix(stack_size)
@@ -274,7 +274,7 @@ class EncoderSRNN(nn.Module):
                                       contiguous()
 
     def init_hidden(self, batch_size):
-        return self.hidden_size.expand(batch_size, self.hidden_size)
+        return self.zero_hidden.expand(batch_size, self.hidden_size)
 
 def progress_bar(percent, last_loss, epoch):
     """Prints the progress until the next report."""
